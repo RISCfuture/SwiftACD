@@ -1,0 +1,63 @@
+# CI Matrix Policy
+#
+# Category A (tools-version 6.2 + macOS 26 min): macos-26 + Swift 6.2
+# Category B (tools-version 6.2 + older macOS):  macos-15 + 6.2, macos-26 + 6.2
+# Category C (tools-version 6.0):                macos-15 + 6.1, macos-15 + 6.3, macos-26 + 6.3
+#
+# When Swift 6.4 ships: bump 6.1→6.2 and 6.3→6.4 in Category C
+# When bumping tools-version to 6.2: drop 6.0/6.1, move to Category A or B
+#
+# SwiftACD currently uses tools-version 6.3, so only Swift 6.3 entries qualify.
+
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  tests:
+    name: Build and Test
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: macos-15
+            swift: "6.3"
+          - os: macos-26
+            swift: "6.3"
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v6
+      - uses: SwiftyLab/setup-swift@latest
+        with:
+          swift-version: ${{ matrix.swift }}
+      - name: Build
+        run: swift build -v
+      - name: Test
+        run: swift test -v
+  lint:
+    name: Run Swiftlint
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+      - uses: norio-nomura/action-swiftlint@3.2.1
+  swift-format:
+    name: Run swift-format
+    runs-on: ubuntu-latest
+    container:
+      image: swift:latest
+    steps:
+      - uses: actions/checkout@v6
+      - name: Download .swift-format config
+        run: |
+          apt-get update && apt-get install -y wget
+          wget -O .swift-format https://gist.githubusercontent.com/RISCfuture/e0c21afb7bd80a88d128a42bf40d2ecd/raw/.swift-format
+      - name: Run swift-format lint
+        run: swift format lint -r .

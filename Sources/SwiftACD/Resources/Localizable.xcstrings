@@ -1,0 +1,88 @@
+{
+  "sourceLanguage" : "en",
+  "strings" : {
+    "EUROCONTROL detail page for %@ is malformed: %@." : {
+      "comment" : "failure reason",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "EUROCONTROL detail page for %1$@ is malformed: %2$@."
+          }
+        }
+      }
+    },
+    "FAA row %lld has an invalid %@ value %@." : {
+      "comment" : "failure reason",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "FAA row %1$lld has an invalid %2$@ value %3$@."
+          }
+        }
+      }
+    },
+    "FAA workbook %@ is malformed: %@." : {
+      "comment" : "failure reason",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "FAA workbook %1$@ is malformed: %2$@."
+          }
+        }
+      }
+    },
+    "FAA workbook header row has no column for %@." : {
+      "comment" : "failure reason"
+    },
+    "Failed to download aircraft database." : {
+      "comment" : "error description"
+    },
+    "Failed to parse aircraft database." : {
+      "comment" : "error description"
+    },
+    "File not found: %@." : {
+      "comment" : "failure reason"
+    },
+    "HTTP response %lld received when downloading from %@." : {
+      "comment" : "failure reason",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "HTTP response %1$lld received when downloading from %2$@."
+          }
+        }
+      }
+    },
+    "No .xlsx link was found on the FAA ACD page %@." : {
+      "comment" : "failure reason"
+    },
+    "Unexpected network error occurred when downloading from %@." : {
+      "comment" : "failure reason"
+    },
+    "Unknown %@ value %@ (%@)." : {
+      "comment" : "failure reason for unknown enum raw value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Unknown %1$@ value %2$@ (%3$@)."
+          }
+        }
+      }
+    },
+    "Verify that %@ is reachable." : {
+      "comment" : "recovery suggestion"
+    },
+    "Verify the FAA ACD page URL has not changed." : {
+      "comment" : "recovery suggestion"
+    },
+    "Verify the file was not moved or deleted." : {
+      "comment" : "recovery suggestion"
+    }
+  },
+  "version" : "1.0"
+}
