@@ -45,22 +45,6 @@ public struct Downloader: Sendable {
     self.apdDownloader = APDDownloader()
   }
 
-  init(
-    workingDirectory: URL,
-    progressCallback: ProgressCallback? = nil,
-    acdDownloader: ACDDownloader,
-    apdDownloader: APDDownloader
-  ) throws {
-    try FileManager.default.createDirectory(
-      at: workingDirectory,
-      withIntermediateDirectories: true
-    )
-    self.workingDirectory = workingDirectory
-    self.progressCallback = progressCallback
-    self.acdDownloader = acdDownloader
-    self.apdDownloader = apdDownloader
-  }
-
   /// Downloads the FAA ACD workbook to the working-directory root.
   ///
   /// - Returns: the URL of the downloaded `.xlsx` file.
