@@ -59,17 +59,17 @@ public enum AircraftApproachCategory: String, Sendable, Codable, Hashable, CaseI
 /// (per FAA AC 150/5300-13). Higher groups admit larger aircraft.
 public enum AirplaneDesignGroup: String, Sendable, Codable, Hashable, CaseIterable {
   /// Wingspan < 49 ft, tail height < 20 ft.
-  case I = "I"
+  case I
   /// 49 ft ≤ wingspan < 79 ft, 20 ft ≤ tail height < 30 ft.
-  case II = "II"
+  case II
   /// 79 ft ≤ wingspan < 118 ft, 30 ft ≤ tail height < 45 ft.
-  case III = "III"
+  case III
   /// 118 ft ≤ wingspan < 171 ft, 45 ft ≤ tail height < 60 ft.
-  case IV = "IV"
+  case IV
   /// 171 ft ≤ wingspan < 214 ft, 60 ft ≤ tail height < 66 ft.
-  case V = "V"
+  case V
   /// 214 ft ≤ wingspan < 262 ft, 66 ft ≤ tail height < 80 ft.
-  case VI = "VI"
+  case VI
 }
 
 /// FAA Taxiway Design Group, derived from main gear width (MGW) and the
