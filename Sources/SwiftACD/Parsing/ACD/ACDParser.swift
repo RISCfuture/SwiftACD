@@ -79,7 +79,6 @@ struct ACDParser {
     )
 
     return ACDRow(
-      rowNumber: rowNumber,
       ICAOTypeDesignator: ICAO,
       manufacturer: get(columns.manufacturer),
       model: get(columns.model),

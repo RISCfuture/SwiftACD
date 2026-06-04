@@ -1,9 +1,6 @@
 import Foundation
 
 struct ACDRow: Sendable, Hashable {
-  // 1-based row number in the source spreadsheet, used in error messages.
-  let rowNumber: Int
-
   let ICAOTypeDesignator: String
   let manufacturer: String?
   let model: String?

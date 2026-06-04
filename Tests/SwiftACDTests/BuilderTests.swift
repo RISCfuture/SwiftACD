@@ -11,7 +11,6 @@ struct BuilderTests {
   /// A reasonably complete ACD row for an A320, mirroring what the real
   /// workbook publishes.
   static func a320ACDRow(
-    rowNumber: Int = 12,
     ICAO: String = "A320",
     model: String = "A320",
     MTOW: Double? = 169_755,
@@ -23,7 +22,6 @@ struct BuilderTests {
     approachSpeed: Double? = 138
   ) -> ACDRow {
     ACDRow(
-      rowNumber: rowNumber,
       ICAOTypeDesignator: ICAO,
       manufacturer: "Airbus",
       model: model,
@@ -42,12 +40,10 @@ struct BuilderTests {
 
   /// A B738 ACD row keyed for variant fan-out testing.
   static func b738ACDRow(
-    rowNumber: Int,
     model: String,
     MTOW: Double = 174_700
   ) -> ACDRow {
     ACDRow(
-      rowNumber: rowNumber,
       ICAOTypeDesignator: "B738",
       manufacturer: "Boeing",
       model: model,
@@ -288,8 +284,8 @@ struct BuilderTests {
 
   @Test("Variant fan-out preserves every ACD row and exposes the first as the top-level model")
   func variantFanOut() throws {
-    let row1 = Self.b738ACDRow(rowNumber: 1, model: "737-800")
-    let row2 = Self.b738ACDRow(rowNumber: 2, model: "737-800W")
+    let row1 = Self.b738ACDRow(model: "737-800")
+    let row2 = Self.b738ACDRow(model: "737-800W")
     let result = Builder.build(ACDRows: [row1, row2], APDRecords: [:])
 
     let profile = try #require(result["B738"])
