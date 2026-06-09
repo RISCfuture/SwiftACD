@@ -24,7 +24,7 @@ else belongs cleanly to one source.
 For any field both sources publish, SwiftACD **prefers FAA and falls back to
 APD**:
 
-```
+```swift
 field = primaryFAARow.field ?? apdRecord.field
 ```
 

@@ -5,6 +5,7 @@ All notable changes to SwiftACD will be documented in this file. The format is b
 ## [0.1.0] - 2026-05-01
 
 ### Added
+
 - Initial release.
 - Async `Downloader` that fetches the FAA ACD `.xlsx` and scrapes the EUROCONTROL APD detail pages.
 - `Parser` that ingests the downloaded data and assembles one `AircraftProfile` per ICAO type designator.
