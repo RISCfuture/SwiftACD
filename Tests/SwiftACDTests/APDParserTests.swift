@@ -1,4 +1,5 @@
 import Foundation
+import Synchronization
 import Testing
 
 @testable import SwiftACD
@@ -243,20 +244,15 @@ struct APDParserTests {
   }
 }
 
-/// Lock-guarded error accumulator usable from a `@Sendable` callback.
-private final class ErrorBox: @unchecked Sendable {
-  private let lock = NSLock()
-  private var errors: [Error] = []
+// Lock-guarded error accumulator usable from a @Sendable callback. The Mutex
+// provides the mutual exclusion, so the class is Sendable without an @unchecked
+// escape hatch.
+private final class ErrorBox: Sendable {
+  private let errors = Mutex<[Error]>([])
 
-  var all: [Error] {
-    lock.lock()
-    defer { lock.unlock() }
-    return errors
-  }
+  var all: [Error] { errors.withLock { $0 } }
 
   func append(_ error: Error) {
-    lock.lock()
-    errors.append(error)
-    lock.unlock()
+    errors.withLock { $0.append(error) }
   }
 }

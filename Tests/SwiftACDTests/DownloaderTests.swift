@@ -1,57 +1,62 @@
 import Foundation
+import Synchronization
 import Testing
 
 @testable import SwiftACD
 
 // MARK: - URLProtocol mock
 
-/// Thread-safe state shared by ``MockURLProtocol`` instances. Tests register
-/// per-URL handlers and (optionally) a hook that observes simultaneous-request
-/// counts.
-private final class MockState: @unchecked Sendable {
-  private let lock = NSLock()
-  private var handlers: [String: @Sendable (URLRequest) -> MockResponse] = [:]
-  private var inFlight = 0
-  private(set) var maxInFlight = 0
-  private(set) var startedURLs: [String] = []
+// Thread-safe state shared by MockURLProtocol instances; tests register per-URL
+// handlers and observe simultaneous-request counts. A Mutex (not an actor) backs
+// it because the state is read from the synchronous URLProtocol callbacks that
+// drive MockURLProtocol, which cannot await.
+private final class MockState: Sendable {
+  private let storage = Mutex(Storage())
+
+  var maxInFlight: Int { storage.withLock { $0.maxInFlight } }
+
+  func reset() {
+    storage.withLock { $0 = Storage() }
+  }
 
   func register(
     _ url: URL,
     handler: @escaping @Sendable (URLRequest) -> MockResponse
   ) {
-    lock.lock()
-    defer { lock.unlock() }
-    handlers[url.absoluteString] = handler
+    storage.withLock { $0.handlers[url.absoluteString] = handler }
   }
 
   func handler(for url: URL) -> (@Sendable (URLRequest) -> MockResponse)? {
-    lock.lock()
-    defer { lock.unlock() }
-    if let exact = handlers[url.absoluteString] { return exact }
-    // Fall back to query-stripped match so APD detail URLs with
-    // canonicalised query string ordering still resolve.
-    var components = URLComponents(url: url, resolvingAgainstBaseURL: false)
-    components?.fragment = nil
-    if let normalized = components?.url?.absoluteString,
-      let match = handlers[normalized]
-    {
-      return match
+    storage.withLock { storage in
+      if let exact = storage.handlers[url.absoluteString] { return exact }
+      // Fall back to query-stripped match so APD detail URLs with
+      // canonicalised query string ordering still resolve.
+      var components = URLComponents(url: url, resolvingAgainstBaseURL: false)
+      components?.fragment = nil
+      if let normalized = components?.url?.absoluteString,
+        let match = storage.handlers[normalized]
+      {
+        return match
+      }
+      return nil
     }
-    return nil
   }
 
-  func enter(url: URL) {
-    lock.lock()
-    inFlight += 1
-    if inFlight > maxInFlight { maxInFlight = inFlight }
-    startedURLs.append(url.absoluteString)
-    lock.unlock()
+  func enter() {
+    storage.withLock { storage in
+      storage.inFlight += 1
+      if storage.inFlight > storage.maxInFlight { storage.maxInFlight = storage.inFlight }
+    }
   }
 
   func leave() {
-    lock.lock()
-    inFlight -= 1
-    lock.unlock()
+    storage.withLock { $0.inFlight -= 1 }
+  }
+
+  private struct Storage {
+    var handlers: [String: @Sendable (URLRequest) -> MockResponse] = [:]
+    var inFlight = 0
+    var maxInFlight = 0
   }
 }
 
@@ -77,9 +82,9 @@ private struct MockResponse: Sendable {
 }
 
 private final class MockURLProtocol: URLProtocol, @unchecked Sendable {
-  /// `nonisolated(unsafe)` is acceptable here: the underlying `MockState`
-  /// uses an internal lock and tests scope their own state per session.
-  nonisolated(unsafe) static var current = MockState()
+  // The reference is immutable; MockState is Sendable and guards its own state,
+  // and tests call `reset()` to start each case from a clean slate.
+  static let current = MockState()
 
   // swiftlint:disable non_overridable_class_declaration static_over_final_class
   override class func canInit(with _: URLRequest) -> Bool { true }
@@ -105,7 +110,7 @@ private final class MockURLProtocol: URLProtocol, @unchecked Sendable {
       )
       return
     }
-    state.enter(url: url)
+    state.enter()
     let response = handler(request)
     let httpResponse = HTTPURLResponse(
       url: url,
@@ -202,7 +207,7 @@ extension DownloaderTests {
 
     @Test("Resolves the .xlsx link and writes the file")
     func resolvesAndDownloads() async throws {
-      MockURLProtocol.current = MockState()
+      MockURLProtocol.current.reset()
       let session = makeSession()
       let directory = tempDirectory()
       defer { try? FileManager.default.removeItem(at: directory) }
@@ -234,7 +239,7 @@ extension DownloaderTests {
 
     @Test("Resolves the FAA-style extension-less link by anchor text")
     func resolvesExtensionLessLink() async throws {
-      MockURLProtocol.current = MockState()
+      MockURLProtocol.current.reset()
       let session = makeSession()
       let directory = tempDirectory()
       defer { try? FileManager.default.removeItem(at: directory) }
@@ -274,7 +279,7 @@ extension DownloaderTests {
 
     @Test("Throws when no .xlsx link is found on the landing page")
     func noLinkFound() async throws {
-      MockURLProtocol.current = MockState()
+      MockURLProtocol.current.reset()
       let session = makeSession()
       let directory = tempDirectory()
       defer { try? FileManager.default.removeItem(at: directory) }
@@ -297,7 +302,7 @@ extension DownloaderTests {
 
     @Test("Throws .networkError when the landing page returns 500")
     func landingPage500() async throws {
-      MockURLProtocol.current = MockState()
+      MockURLProtocol.current.reset()
       let session = makeSession()
       let directory = tempDirectory()
       defer { try? FileManager.default.removeItem(at: directory) }
@@ -339,7 +344,7 @@ extension DownloaderTests {
 
     @Test("Enumerates ICAOs and downloads each detail page")
     func enumeratesAndDownloads() async throws {
-      MockURLProtocol.current = MockState()
+      MockURLProtocol.current.reset()
       let session = makeSession()
       let directory = tempDirectory()
       defer { try? FileManager.default.removeItem(at: directory) }
@@ -378,7 +383,7 @@ extension DownloaderTests {
 
     @Test("Skips a failing detail page and routes the error to the callback")
     func continuesOnFailure() async throws {
-      MockURLProtocol.current = MockState()
+      MockURLProtocol.current.reset()
       let session = makeSession()
       let directory = tempDirectory()
       defer { try? FileManager.default.removeItem(at: directory) }
@@ -427,7 +432,7 @@ extension DownloaderTests {
 
     @Test("Respects bounded concurrency", .timeLimit(.minutes(1)))
     func boundedConcurrency() async throws {
-      MockURLProtocol.current = MockState()
+      MockURLProtocol.current.reset()
       let session = makeSession()
       let directory = tempDirectory()
       defer { try? FileManager.default.removeItem(at: directory) }
@@ -466,20 +471,15 @@ extension DownloaderTests {
 
 // MARK: - Test helpers
 
-/// Thread-safe error accumulator for tests.
-private final class ErrorBox: @unchecked Sendable {
-  private let lock = NSLock()
-  private var errors: [Error] = []
+// Thread-safe error accumulator for tests, usable from a @Sendable callback. The
+// Mutex provides the mutual exclusion, so the class is Sendable without an
+// @unchecked escape hatch.
+private final class ErrorBox: Sendable {
+  private let errors = Mutex<[Error]>([])
 
-  var count: Int {
-    lock.lock()
-    defer { lock.unlock() }
-    return errors.count
-  }
+  var count: Int { errors.withLock { $0.count } }
 
   func append(_ error: Error) {
-    lock.lock()
-    errors.append(error)
-    lock.unlock()
+    errors.withLock { $0.append(error) }
   }
 }

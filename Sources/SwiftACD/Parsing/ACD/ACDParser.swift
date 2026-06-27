@@ -3,13 +3,13 @@ import Foundation
 
 struct ACDParser {
 
-  // CoreXLSX hasn't marked `ColumnReference` Sendable, but the value is
-  // constructed once and only read thereafter.
-  nonisolated(unsafe) private static let firstColumn = ColumnReference("A")!
-
   let url: URL
 
   private static func expandRow(_ row: Row, sharedStrings: SharedStrings?) -> [String] {
+    // CoreXLSX hasn't marked `ColumnReference` Sendable, so the origin column is
+    // built locally per row (a single-character parse, negligible) rather than
+    // held in a shared static that would need an escape hatch.
+    let firstColumn = ColumnReference("A")!
     let columnIndices = row.cells.map { firstColumn.distance(to: $0.reference.column) }
     let maxIndex = columnIndices.max() ?? -1
     var result = Array(repeating: "", count: maxIndex + 1)

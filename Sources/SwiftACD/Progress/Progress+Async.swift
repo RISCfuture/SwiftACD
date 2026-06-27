@@ -12,10 +12,15 @@ public typealias ProgressCallback = @Sendable (Progress) -> Void
 ///
 /// ```swift
 /// let progress = AsyncProgress()
-/// Timer.scheduledTimer(withTimeInterval: 1.0, repeats: true) { _ in
-///   Task { print("Progress: \(await progress.percentDone ?? 0)%") }
+/// let monitor = Task {
+///   while !Task.isCancelled {
+///     print("Progress: \(await progress.percentDone ?? 0)%")
+///     if await progress.isFinished { break }
+///     try await Task.sleep(for: .seconds(1))
+///   }
 /// }
 /// _ = try await parser.parse(progress: progress, errorCallback: { _ in })
+/// monitor.cancel()
 /// ```
 public actor AsyncProgress {
   private var totalBytes: Int64 = 0 {
