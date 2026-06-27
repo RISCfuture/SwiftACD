@@ -13,3 +13,8 @@ All notable changes to SwiftACD will be documented in this file. The format is b
 - `Measurement<Unit>` computed properties for every physical quantity.
 - `AsyncProgress` actor for tracking parse progress.
 - `SwiftACDError` with localized error descriptions.
+
+### Changed
+
+- Adopted the Approachable Concurrency upcoming-feature flags (`NonisolatedNonsendingByDefault`, `InferIsolatedConformances`). The `nonisolated async` APIs (`Parser.parse`, `Downloader.downloadACD`/`downloadAPD`/`downloadAll`) run on the caller's executor by default instead of hopping to the global concurrent executor.
+- Raised the minimum deployment targets to macOS 15, iOS 18, tvOS 18, watchOS 11, and visionOS 2, and moved shared-state synchronization to `Synchronization.Mutex`.
