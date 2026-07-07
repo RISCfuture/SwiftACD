@@ -1,4 +1,7 @@
 import Foundation
+#if canImport(FoundationNetworking)
+  import FoundationNetworking
+#endif
 import SwiftSoup
 
 // Scrapes the FAA landing page, locates the most recent `.xlsx` link, and
@@ -133,45 +136,53 @@ struct ACDDownloader: Sendable {
     var request = URLRequest(url: url)
     request.setValue(userAgent, forHTTPHeaderField: "User-Agent")
 
-    let (bytes, response) = try await session.bytes(for: request)
-    try ensureHTTPSuccess(request: request, response: response)
-
     try FileManager.default.createDirectory(
       at: directory,
       withIntermediateDirectories: true
     )
-
     let filename = Self.filename(for: url)
     let fileURL = directory.appendingPathComponent(filename)
 
-    // Create / truncate the destination file.
-    FileManager.default.createFile(atPath: fileURL.path, contents: nil)
-    let handle = try FileHandle(forWritingTo: fileURL)
-    defer { try? handle.close() }
+    #if canImport(FoundationNetworking)
+      // swift-corelibs-foundation's URLSession has no byte-streaming API, so
+      // the whole response is buffered before it's written to disk.
+      let (data, response) = try await session.data(for: request)
+      try ensureHTTPSuccess(request: request, response: response)
+      try data.write(to: fileURL)
+      progressCallback?(.init(Int64(data.count), of: Int64(data.count)))
+    #else
+      let (bytes, response) = try await session.bytes(for: request)
+      try ensureHTTPSuccess(request: request, response: response)
 
-    let total = (response as? HTTPURLResponse)?.expectedContentLength ?? -1
-    var written: Int64 = 0
-    var buffer = Data()
-    buffer.reserveCapacity(64 * 1024)
+      // Create / truncate the destination file.
+      FileManager.default.createFile(atPath: fileURL.path, contents: nil)
+      let handle = try FileHandle(forWritingTo: fileURL)
+      defer { try? handle.close() }
 
-    for try await byte in bytes {
-      buffer.append(byte)
-      if buffer.count >= 64 * 1024 {
+      let total = (response as? HTTPURLResponse)?.expectedContentLength ?? -1
+      var written: Int64 = 0
+      var buffer = Data()
+      buffer.reserveCapacity(64 * 1024)
+
+      for try await byte in bytes {
+        buffer.append(byte)
+        if buffer.count >= 64 * 1024 {
+          try handle.write(contentsOf: buffer)
+          written += Int64(buffer.count)
+          buffer.removeAll(keepingCapacity: true)
+          if let progressCallback {
+            progressCallback(.init(written, of: max(total, written)))
+          }
+        }
+      }
+      if !buffer.isEmpty {
         try handle.write(contentsOf: buffer)
         written += Int64(buffer.count)
-        buffer.removeAll(keepingCapacity: true)
         if let progressCallback {
           progressCallback(.init(written, of: max(total, written)))
         }
       }
-    }
-    if !buffer.isEmpty {
-      try handle.write(contentsOf: buffer)
-      written += Int64(buffer.count)
-      if let progressCallback {
-        progressCallback(.init(written, of: max(total, written)))
-      }
-    }
+    #endif
 
     return fileURL
   }

@@ -1,4 +1,7 @@
 import Foundation
+#if canImport(FoundationNetworking)
+  import FoundationNetworking
+#endif
 
 /// Errors thrown by SwiftACD's downloaders, parsers, and builder.
 ///
@@ -133,7 +136,7 @@ extension SwiftACDErrorContext {
     switch self {
       case let .ACDRow(row):
         return String(
-          localized: "ACD row \(row, format: .number)",
+          localized: "ACD row \(row)",
           bundle: .module,
           comment: "error context for an ACD row number"
         )
@@ -217,7 +220,7 @@ extension SwiftACDError: LocalizedError {
         )
       case let .invalidACDCell(field, value, row):
         return String(
-          localized: "FAA row \(row, format: .number) has an invalid \(field) value \(value).",
+          localized: "FAA row \(row) has an invalid \(field) value \(value).",
           bundle: .module,
           comment: "failure reason"
         )

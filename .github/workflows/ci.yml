@@ -8,6 +8,7 @@
 # When bumping tools-version to 6.2: drop 6.0/6.1, move to Category A or B
 #
 # SwiftACD currently uses tools-version 6.3, so only Swift 6.3 entries qualify.
+# Linux (ubuntu-latest + Swift 6.3) is included in the matrix.
 
 name: CI
 
@@ -31,6 +32,8 @@ jobs:
           - os: macos-15
             swift: "6.3"
           - os: macos-26
+            swift: "6.3"
+          - os: ubuntu-latest
             swift: "6.3"
     runs-on: ${{ matrix.os }}
     steps:
