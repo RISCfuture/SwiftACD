@@ -1,4 +1,7 @@
 import Foundation
+#if canImport(FoundationNetworking)
+  import FoundationNetworking
+#endif
 import SwiftSoup
 
 // Walks the public list page (`default.aspx`), extracts every ICAO type

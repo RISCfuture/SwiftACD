@@ -1,4 +1,7 @@
 import Foundation
+#if canImport(FoundationNetworking)
+  import FoundationNetworking
+#endif
 import Synchronization
 import Testing
 
@@ -119,17 +122,37 @@ private final class MockURLProtocol: URLProtocol, @unchecked Sendable {
       headerFields: response.headers
     )!
 
-    let work: @Sendable () -> Void = { [weak self] in
-      guard let self else { return }
-      self.client?.urlProtocol(
-        self,
-        didReceive: httpResponse,
-        cacheStoragePolicy: .notAllowed
-      )
-      self.client?.urlProtocol(self, didLoad: response.body)
-      self.client?.urlProtocolDidFinishLoading(self)
-      state.leave()
-    }
+    #if canImport(Darwin)
+      let work: @Sendable () -> Void = { [weak self] in
+        guard let self else { return }
+        self.client?.urlProtocol(
+          self,
+          didReceive: httpResponse,
+          cacheStoragePolicy: .notAllowed
+        )
+        self.client?.urlProtocol(self, didLoad: response.body)
+        self.client?.urlProtocolDidFinishLoading(self)
+        state.leave()
+      }
+    #else
+      // On Linux, `URLProtocol`'s `Sendable` conformance is unavailable (and
+      // `@unchecked Sendable` above doesn't override that), so `weak self` can't
+      // cross into this `@Sendable` closure. Capture `self` through a
+      // `nonisolated(unsafe)` binding instead; that's safe here because
+      // URLSession keeps the protocol instance alive for the duration of the
+      // load, and this mock never outlives it.
+      nonisolated(unsafe) let this = self
+      let work: @Sendable () -> Void = {
+        this.client?.urlProtocol(
+          this,
+          didReceive: httpResponse,
+          cacheStoragePolicy: .notAllowed
+        )
+        this.client?.urlProtocol(this, didLoad: response.body)
+        this.client?.urlProtocolDidFinishLoading(this)
+        state.leave()
+      }
+    #endif
 
     if let delay = response.delay {
       Task {

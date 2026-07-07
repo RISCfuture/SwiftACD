@@ -1,4 +1,7 @@
 import Foundation
+#if canImport(FoundationNetworking)
+  import FoundationNetworking
+#endif
 
 // FAA rejects scripted clients without a browser-shaped UA.
 let defaultUserAgent =
