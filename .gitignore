@@ -13,11 +13,9 @@ DerivedData/
 *.xccheckout
 build/
 
-# netrc credentials
-.netrc
-
 # SwiftLint remote config cache
 .swiftlint/RemoteConfigCache
 
 # swift-format (downloaded in CI)
 .swift-format
+.claude/settings.local.json
