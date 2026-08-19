@@ -29,7 +29,7 @@ public struct Parser: Sendable {
   /// Designated initializer.
   ///
   /// - Parameter directory: A directory previously populated by
-  ///   ``Downloader/downloadAll()`` or its constituent methods.
+  ///   ``Downloader/downloadAll(errorCallback:)`` or its constituent methods.
   public init(directory: URL) {
     self.directory = directory
   }

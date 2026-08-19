@@ -54,10 +54,6 @@ get the unit you need.
 - ``AircraftClass``
 - ``EngineType``
 - ``EngineCount``
-- ``WingPosition``
-- ``EnginePosition``
-- ``TailConfiguration``
-- ``LandingGearConfiguration``
 
 ### Errors
 
