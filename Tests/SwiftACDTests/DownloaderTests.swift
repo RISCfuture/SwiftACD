@@ -218,18 +218,18 @@ private let apdListHTML = """
 
 /// All downloader tests share the global `MockURLProtocol` state, so they run
 /// serialized.
-@Suite("Downloader", .serialized)
-struct DownloaderTests {}
+@Suite(.serialized)
+struct `Downloader tests` {}
 
 // MARK: - ACDDownloader
 
-extension DownloaderTests {
+extension `Downloader tests` {
 
-  @Suite("ACDDownloader", .serialized)
-  struct ACDDownloaderTests {
+  @Suite(.serialized)
+  struct `ACDDownloader tests` {
 
-    @Test("Resolves the .xlsx link and writes the file")
-    func resolvesAndDownloads() async throws {
+    @Test
+    func `resolves the .xlsx link and writes the file`() async throws {
       MockURLProtocol.current.reset()
       let session = makeSession()
       let directory = tempDirectory()
@@ -260,8 +260,8 @@ extension DownloaderTests {
       #expect(written == xlsxBody)
     }
 
-    @Test("Resolves the FAA-style extension-less link by anchor text")
-    func resolvesExtensionLessLink() async throws {
+    @Test
+    func `resolves the FAA-style extension-less link by anchor text`() async throws {
       MockURLProtocol.current.reset()
       let session = makeSession()
       let directory = tempDirectory()
@@ -300,8 +300,8 @@ extension DownloaderTests {
       #expect(written == xlsxBody)
     }
 
-    @Test("Throws when no .xlsx link is found on the landing page")
-    func noLinkFound() async throws {
+    @Test
+    func `throws when no .xlsx link is found on the landing page`() async throws {
       MockURLProtocol.current.reset()
       let session = makeSession()
       let directory = tempDirectory()
@@ -323,8 +323,8 @@ extension DownloaderTests {
       }
     }
 
-    @Test("Throws .networkError when the landing page returns 500")
-    func landingPage500() async throws {
+    @Test
+    func `throws .networkError when the landing page returns 500`() async throws {
       MockURLProtocol.current.reset()
       let session = makeSession()
       let directory = tempDirectory()
@@ -346,14 +346,14 @@ extension DownloaderTests {
       }
     }
   }
-}  // end DownloaderTests.ACDDownloaderTests extension
+}  // end `Downloader tests`.`ACDDownloader tests` extension
 
 // MARK: - APDDownloader
 
-extension DownloaderTests {
+extension `Downloader tests` {
 
-  @Suite("APDDownloader", .serialized)
-  struct APDDownloaderTests {
+  @Suite(.serialized)
+  struct `APDDownloader tests` {
 
     private static func registerListPage() {
       MockURLProtocol.current.register(APDDownloader.listPage) { _ in
@@ -365,8 +365,8 @@ extension DownloaderTests {
       APDDownloader.detailURL(for: ICAO)
     }
 
-    @Test("Enumerates ICAOs and downloads each detail page")
-    func enumeratesAndDownloads() async throws {
+    @Test
+    func `enumerates ICAOs and downloads each detail page`() async throws {
       MockURLProtocol.current.reset()
       let session = makeSession()
       let directory = tempDirectory()
@@ -404,8 +404,8 @@ extension DownloaderTests {
       }
     }
 
-    @Test("Skips a failing detail page and routes the error to the callback")
-    func continuesOnFailure() async throws {
+    @Test
+    func `skips a failing detail page and routes the error to the callback`() async throws {
       MockURLProtocol.current.reset()
       let session = makeSession()
       let directory = tempDirectory()
@@ -453,8 +453,8 @@ extension DownloaderTests {
       #expect(errors.count == 1)
     }
 
-    @Test("Respects bounded concurrency", .timeLimit(.minutes(1)))
-    func boundedConcurrency() async throws {
+    @Test(.timeLimit(.minutes(1)))
+    func `respects bounded concurrency`() async throws {
       MockURLProtocol.current.reset()
       let session = makeSession()
       let directory = tempDirectory()
@@ -490,7 +490,7 @@ extension DownloaderTests {
       #expect(MockURLProtocol.current.maxInFlight >= 1)
     }
   }
-}  // end DownloaderTests.APDDownloaderTests extension
+}  // end `Downloader tests`.`APDDownloader tests` extension
 
 // MARK: - Test helpers
 
