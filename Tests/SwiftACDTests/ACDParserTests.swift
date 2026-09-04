@@ -3,16 +3,16 @@ import Testing
 
 @testable import SwiftACD
 
-@Suite("ACD parser")
-struct ACDParserTests {
+@Suite
+struct `ACD parser` {
 
   static func fixture() throws -> URL {
     let resources = try #require(Bundle.module.resourceURL)
     return resources.appendingPathComponent("TestResources/sample_acd.xlsx")
   }
 
-  @Test("Parses every well-formed row from the fixture workbook")
-  func parsesFixture() throws {
+  @Test
+  func `parses every well-formed row from the fixture workbook`() throws {
     var errors: [any Error] = []
     let parser = ACDParser(url: try Self.fixture())
     let rows = try parser.parse(errorCallback: { errors.append($0) })
@@ -26,8 +26,8 @@ struct ACDParserTests {
     #expect(ICAOs.contains("GLF6"))
   }
 
-  @Test("Surfaces multiple variants for B738")
-  func b738Variants() throws {
+  @Test
+  func `surfaces multiple variants for B738`() throws {
     let parser = ACDParser(url: try Self.fixture())
     let rows = try parser.parse(errorCallback: { _ in })
     let b738 = rows.filter { $0.ICAOTypeDesignator == "B738" }
@@ -36,8 +36,8 @@ struct ACDParserTests {
     #expect(b738.contains { $0.model == "737-800W" })
   }
 
-  @Test("Decodes typed numeric fields and enums")
-  func decodesA320() throws {
+  @Test
+  func `decodes typed numeric fields and enums`() throws {
     let parser = ACDParser(url: try Self.fixture())
     let rows = try parser.parse(errorCallback: { _ in })
     let a320 = try #require(rows.first { $0.ICAOTypeDesignator == "A320" })
@@ -55,8 +55,8 @@ struct ACDParserTests {
     #expect(a320.approachSpeedKt == 138)
   }
 
-  @Test("Heavy aircraft surface ADG VI / TDG 7")
-  func b748Categories() throws {
+  @Test
+  func `assigns ADG VI and TDG 7 to heavy aircraft`() throws {
     let parser = ACDParser(url: try Self.fixture())
     let rows = try parser.parse(errorCallback: { _ in })
     let b748 = try #require(rows.first { $0.ICAOTypeDesignator == "B748" })
@@ -65,8 +65,8 @@ struct ACDParserTests {
     #expect(b748.approachCategory == .d)
   }
 
-  @Test("Unknown ADG raw value triggers error callback and skips row")
-  func unknownADGRawValue() throws {
+  @Test
+  func `skips a row whose ADG raw value is unknown and reports it to the error callback`() throws {
     var errors: [any Error] = []
     let parser = ACDParser(url: try Self.fixture())
     let rows = try parser.parse(errorCallback: { errors.append($0) })

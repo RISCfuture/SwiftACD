@@ -4,8 +4,8 @@ import Testing
 
 @testable import SwiftACD
 
-@Suite("APD parser")
-struct APDParserTests {
+@Suite
+struct `APD parser` {
 
   // MARK: - Fixture helpers
 
@@ -51,8 +51,8 @@ struct APDParserTests {
 
   // MARK: - Per-aircraft assertions
 
-  @Test("A320 — narrowbody jet identity, dimensions, performance")
-  func parseA320() throws {
+  @Test
+  func `parses A320 narrowbody jet identity, dimensions, and performance`() throws {
     let r = try Self.parse("apd_A320.html", ICAO: "A320")
 
     #expect(r.ICAOTypeDesignator == "A320")
@@ -102,8 +102,8 @@ struct APDParserTests {
     #expect(r.identity.alternativeNames.contains(where: { $0.contains("A-320") }))
   }
 
-  @Test("B738 — narrowbody jet")
-  func parseB738() throws {
+  @Test
+  func `parses the B738 narrowbody jet`() throws {
     let r = try Self.parse("apd_B738.html", ICAO: "B738")
 
     #expect(r.ICAOTypeDesignator == "B738")
@@ -116,8 +116,8 @@ struct APDParserTests {
     #expect(r.identity.IATACodes.contains("738"))
   }
 
-  @Test("C172 — single-engine piston")
-  func parseC172() throws {
+  @Test
+  func `parses the C172 single-engine piston`() throws {
     let r = try Self.parse("apd_C172.html", ICAO: "C172")
 
     #expect(r.identity.aircraftClass == .landplane)
@@ -138,8 +138,8 @@ struct APDParserTests {
     #expect(r.performance.landing.vatKt == 65)
   }
 
-  @Test("B748 — heavy jet")
-  func parseB748() throws {
+  @Test
+  func `parses the B748 heavy jet`() throws {
     let r = try Self.parse("apd_B748.html", ICAO: "B748")
 
     #expect(r.identity.aircraftClass == .landplane)
@@ -156,8 +156,8 @@ struct APDParserTests {
     #expect(r.performance.cruise.mach == 0.86)
   }
 
-  @Test("EC25 — empty/sparse fallback page parses without throwing")
-  func parseEC25() throws {
+  @Test
+  func `parses the sparse EC25 fallback page without throwing`() throws {
     let r = try Self.parse("apd_EC25.html", ICAO: "EC25")
 
     #expect(r.ICAOTypeDesignator == "EC25")
@@ -185,8 +185,8 @@ struct APDParserTests {
 
   // MARK: - Directory walk
 
-  @Test("Directory parse picks up every fixture HTML keyed by ICAO")
-  func parseDirectory() async throws {
+  @Test
+  func `picks up every fixture HTML keyed by ICAO when parsing a directory`() async throws {
     let tmp = try makeTempDir()
     defer { try? FileManager.default.removeItem(at: tmp) }
 
@@ -209,8 +209,8 @@ struct APDParserTests {
     }
   }
 
-  @Test("Unreadable file surfaces malformedAPDPage and the parse continues")
-  func malformedFileSurfacesError() async throws {
+  @Test
+  func `surfaces malformedAPDPage for an unreadable file and keeps parsing`() async throws {
     let tmp = try makeTempDir()
     defer { try? FileManager.default.removeItem(at: tmp) }
 

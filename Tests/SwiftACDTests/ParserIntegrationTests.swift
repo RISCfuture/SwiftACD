@@ -3,8 +3,8 @@ import Testing
 
 @testable import SwiftACD
 
-@Suite("Parser facade")
-struct ParserIntegrationTests {
+@Suite
+struct `Parser facade` {
 
   /// Build a working directory containing the fixture xlsx and APD html
   /// files in the layout `Parser` expects.
@@ -31,8 +31,8 @@ struct ParserIntegrationTests {
     return dir
   }
 
-  @Test("Parses ACD + APD into composite profiles keyed by ICAO")
-  func endToEnd() async throws {
+  @Test
+  func `parses ACD and APD into composite profiles keyed by ICAO`() async throws {
     let dir = try Self.makeFixtureDirectory()
     defer { try? FileManager.default.removeItem(at: dir) }
 
@@ -76,8 +76,8 @@ struct ParserIntegrationTests {
     #expect(ec25.sources == .APD)
   }
 
-  @Test("Progress reaches total bytes")
-  func progressCompletes() async throws {
+  @Test
+  func `reports progress reaching total bytes`() async throws {
     let dir = try Self.makeFixtureDirectory()
     defer { try? FileManager.default.removeItem(at: dir) }
 

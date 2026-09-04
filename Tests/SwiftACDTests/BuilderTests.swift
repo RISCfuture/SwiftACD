@@ -3,8 +3,8 @@ import Testing
 
 @testable import SwiftACD
 
-@Suite("Builder")
-struct BuilderTests {
+@Suite
+struct `Builder tests` {
 
   // MARK: - Fixture factories
 
@@ -192,8 +192,8 @@ struct BuilderTests {
 
   // MARK: - Tests
 
-  @Test("ACD-only profile uses FAA fields, leaves APD-only fields nil")
-  func acdOnlyProfile() throws {
+  @Test
+  func `uses FAA fields and leaves APD-only fields nil for an ACD-only profile`() throws {
     let row = Self.a320ACDRow()
     let result = Builder.build(ACDRows: [row], APDRecords: [:])
 
@@ -218,8 +218,8 @@ struct BuilderTests {
     #expect(profile.sources == .ACD)
   }
 
-  @Test("APD-only profile pulls identity, recognition, and performance from APD")
-  func apdOnlyProfile() throws {
+  @Test
+  func `pulls identity, recognition, and performance from APD for an APD-only profile`() throws {
     let APD = Self.a320APDRecord(ICAO: "A20N")
     let result = Builder.build(ACDRows: [], APDRecords: ["A20N": APD])
 
@@ -253,8 +253,8 @@ struct BuilderTests {
     #expect(profile.sources == .APD)
   }
 
-  @Test("Overlap profile prefers FAA scalars and keeps APD-only fields")
-  func overlapProfile() throws {
+  @Test
+  func `prefers FAA scalars and keeps APD-only fields in an overlapping profile`() throws {
     let ACD = Self.a320ACDRow()
     let APD = Self.a320APDRecord()
     let result = Builder.build(ACDRows: [ACD], APDRecords: ["A320": APD])
@@ -282,8 +282,8 @@ struct BuilderTests {
     #expect(profile.sources == [.ACD, .APD])
   }
 
-  @Test("Variant fan-out preserves every ACD row and exposes the first as the top-level model")
-  func variantFanOut() throws {
+  @Test
+  func `fans every ACD row out into a variant, exposing the first as the model`() throws {
     let row1 = Self.b738ACDRow(model: "737-800")
     let row2 = Self.b738ACDRow(model: "737-800W")
     let result = Builder.build(ACDRows: [row1, row2], APDRecords: [:])
@@ -297,8 +297,8 @@ struct BuilderTests {
     #expect(profile.identity.model == "737-800")
   }
 
-  @Test("Measurement computed properties surface the correct unit and value")
-  func measurementVars() throws {
+  @Test
+  func `surfaces the correct unit and value from measurement computed properties`() throws {
     let ACD = Self.a320ACDRow()
     let APD = Self.a320APDRecord()
     let result = Builder.build(ACDRows: [ACD], APDRecords: ["A320": APD])
@@ -318,8 +318,8 @@ struct BuilderTests {
     #expect(TAS.value == 447)
   }
 
-  @Test("All-nil dimensions produce a nil dimensions field")
-  func allNilDimensions() throws {
+  @Test
+  func `produces a nil dimensions field when every dimension is nil`() throws {
     let row = Self.a320ACDRow(
       MTOW: 12_500,
       wingspan: nil,
@@ -333,8 +333,8 @@ struct BuilderTests {
     #expect(profile.dimensions == nil)
   }
 
-  @Test("Performance phases prune themselves when no fields are populated")
-  func performancePhasePruning() throws {
+  @Test
+  func `prunes performance phases with no populated fields`() throws {
     let APD = Self.minimalAPDRecord(ICAO: "X999")
     let result = Builder.build(ACDRows: [], APDRecords: ["X999": APD])
 
@@ -350,14 +350,14 @@ struct BuilderTests {
     #expect(performance.landing == nil)
   }
 
-  @Test("Empty inputs produce empty output")
-  func emptyInputs() {
+  @Test
+  func `produces empty output from empty inputs`() {
     let result = Builder.build(ACDRows: [], APDRecords: [:])
     #expect(result.isEmpty)
   }
 
-  @Test("Disjoint sources produce one profile per ICAO with the correct source flag")
-  func disjointSources() throws {
+  @Test
+  func `produces one profile per ICAO with the correct source flag from disjoint sources`() throws {
     let ACDOnly = Self.a320ACDRow(ICAO: "C172", model: "172R", MTOW: 2_550)
     let APDOnly = Self.a320APDRecord(ICAO: "B748")
     let result = Builder.build(
