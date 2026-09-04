@@ -13,7 +13,7 @@ struct ACDParserTests {
 
   @Test("Parses every well-formed row from the fixture workbook")
   func parsesFixture() throws {
-    var errors: [Error] = []
+    var errors: [any Error] = []
     let parser = ACDParser(url: try Self.fixture())
     let rows = try parser.parse(errorCallback: { errors.append($0) })
 
@@ -67,7 +67,7 @@ struct ACDParserTests {
 
   @Test("Unknown ADG raw value triggers error callback and skips row")
   func unknownADGRawValue() throws {
-    var errors: [Error] = []
+    var errors: [any Error] = []
     let parser = ACDParser(url: try Self.fixture())
     let rows = try parser.parse(errorCallback: { errors.append($0) })
 

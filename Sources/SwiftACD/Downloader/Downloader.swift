@@ -1,4 +1,4 @@
-import Foundation
+public import Foundation
 
 /// Public facade for downloading the FAA ACD workbook and the EUROCONTROL
 /// APD detail pages into a working directory.
@@ -62,7 +62,7 @@ public struct Downloader: Sendable {
   ///   download continues. Defaults to a no-op.
   /// - Returns: the URL of the `apd/` subdirectory.
   public func downloadAPD(
-    errorCallback: @escaping @Sendable (Error) -> Void = { _ in }
+    errorCallback: @escaping @Sendable (any Error) -> Void = { _ in }
   ) async throws -> URL {
     let APDDirectory = workingDirectory.appendingPathComponent("apd", isDirectory: true)
     return try await apdDownloader.download(
@@ -79,7 +79,7 @@ public struct Downloader: Sendable {
   /// - Returns: the working directory containing the ACD workbook at the root
   ///   and the APD pages under `apd/`.
   public func downloadAll(
-    errorCallback: @escaping @Sendable (Error) -> Void = { _ in }
+    errorCallback: @escaping @Sendable (any Error) -> Void = { _ in }
   ) async throws -> URL {
     async let ACD = downloadACD()
     async let APD = downloadAPD(errorCallback: errorCallback)

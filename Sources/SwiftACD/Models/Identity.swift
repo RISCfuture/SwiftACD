@@ -120,7 +120,7 @@ public enum EngineCount: Sendable, Hashable {
 }
 
 extension EngineCount: Codable {
-  public init(from decoder: Decoder) throws {
+  public init(from decoder: any Decoder) throws {
     let container = try decoder.singleValueContainer()
     let raw = try container.decode(String.self)
     guard let first = raw.first, let value = EngineCount(ICAOCode: first) else {
@@ -132,7 +132,7 @@ extension EngineCount: Codable {
     self = value
   }
 
-  public func encode(to encoder: Encoder) throws {
+  public func encode(to encoder: any Encoder) throws {
     var container = encoder.singleValueContainer()
     try container.encode(ICAOCode)
   }

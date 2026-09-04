@@ -1,4 +1,4 @@
-import Foundation
+public import Foundation
 
 /// One row of the FAA Aircraft Characteristics Database, exposed publicly so
 /// callers can introspect every variant under an ICAO type designator.

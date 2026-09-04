@@ -1,4 +1,4 @@
-import Foundation
+public import Foundation
 
 /// Flight-performance envelope as published by the EUROCONTROL Aircraft
 /// Performance Database. Every phase is optional because EUROCONTROL omits

@@ -1,9 +1,13 @@
 // swift-tools-version: 6.3
 import PackageDescription
 
-let approachableConcurrency: [SwiftSetting] = [
+let upcomingFeatures: [SwiftSetting] = [
   .enableUpcomingFeature("NonisolatedNonsendingByDefault"),
-  .enableUpcomingFeature("InferIsolatedConformances")
+  .enableUpcomingFeature("InferIsolatedConformances"),
+  .enableUpcomingFeature("ImmutableWeakCaptures"),
+  .enableUpcomingFeature("MemberImportVisibility"),
+  .enableUpcomingFeature("ExistentialAny"),
+  .enableUpcomingFeature("InternalImportsByDefault")
 ]
 
 let package = Package(
@@ -36,7 +40,7 @@ let package = Package(
       resources: [
         .process("Resources/Localizable.xcstrings")
       ],
-      swiftSettings: approachableConcurrency
+      swiftSettings: upcomingFeatures
     ),
     .testTarget(
       name: "SwiftACDTests",
@@ -44,7 +48,7 @@ let package = Package(
       resources: [
         .copy("TestResources")
       ],
-      swiftSettings: approachableConcurrency
+      swiftSettings: upcomingFeatures
     ),
     .executableTarget(
       name: "SwiftACD_E2E",
@@ -52,8 +56,8 @@ let package = Package(
         "SwiftACD",
         .product(name: "ArgumentParser", package: "swift-argument-parser")
       ],
-      swiftSettings: approachableConcurrency
+      swiftSettings: upcomingFeatures
     )
   ],
-  swiftLanguageModes: [.v6]
+  swiftLanguageModes: [.v5, .v6]
 )

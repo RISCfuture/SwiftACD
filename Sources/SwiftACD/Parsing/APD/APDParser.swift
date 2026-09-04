@@ -204,7 +204,7 @@ struct APDParser {
   }
 
   func parse(
-    errorCallback: @escaping @Sendable (Error) -> Void
+    errorCallback: @escaping @Sendable (any Error) -> Void
   ) async throws -> [String: APDRecord] {
     let fileManager = FileManager.default
     let contents = try fileManager.contentsOfDirectory(

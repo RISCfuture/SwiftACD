@@ -95,7 +95,7 @@ struct ACDParser {
     )
   }
 
-  func parse(errorCallback: (Error) -> Void) throws -> [ACDRow] {
+  func parse(errorCallback: (any Error) -> Void) throws -> [ACDRow] {
     guard let xlsx = XLSXFile(filepath: url.path) else {
       throw SwiftACDError.malformedWorkbook(url: url, reason: .couldNotOpenArchive)
     }
