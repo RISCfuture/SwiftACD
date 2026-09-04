@@ -142,10 +142,10 @@ extension SwiftACD_E2E {
 private actor ErrorCounter {
   private(set) var total: Int = 0
 
-  func add(_ error: Error) {
+  func add(_ error: any Error) {
     total += 1
     let detail =
-      (error as? LocalizedError)?.failureReason
+      (error as? (any LocalizedError))?.failureReason
       ?? (error as NSError).localizedFailureReason
       ?? error.localizedDescription
     FileHandle.standardError.write(Data("warning: \(detail)\n".utf8))

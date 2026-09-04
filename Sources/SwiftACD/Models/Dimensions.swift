@@ -1,4 +1,4 @@
-import Foundation
+public import Foundation
 
 /// Physical dimensions of an aircraft type.
 ///

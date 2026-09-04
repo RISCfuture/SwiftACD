@@ -1,4 +1,4 @@
-import Foundation
+public import Foundation
 
 /// Reads a previously-downloaded FAA ACD workbook and EUROCONTROL APD
 /// detail-page directory and assembles the composite ``AircraftProfile``
@@ -21,7 +21,7 @@ public struct Parser: Sendable {
 
   /// Callback invoked once for every per-record error encountered. Parsing
   /// continues regardless.
-  public typealias ErrorCallback = @Sendable (_ error: Error) -> Void
+  public typealias ErrorCallback = @Sendable (_ error: any Error) -> Void
 
   /// Working directory holding the FAA workbook and APD subdirectory.
   public let directory: URL

@@ -498,11 +498,11 @@ extension DownloaderTests {
 // Mutex provides the mutual exclusion, so the class is Sendable without an
 // @unchecked escape hatch.
 private final class ErrorBox: Sendable {
-  private let errors = Mutex<[Error]>([])
+  private let errors = Mutex<[any Error]>([])
 
   var count: Int { errors.withLock { $0.count } }
 
-  func append(_ error: Error) {
+  func append(_ error: any Error) {
     errors.withLock { $0.append(error) }
   }
 }

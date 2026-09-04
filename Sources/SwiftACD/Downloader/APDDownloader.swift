@@ -130,7 +130,7 @@ struct APDDownloader: Sendable {
   func download(
     into directory: URL,
     progressCallback: ProgressCallback?,
-    errorCallback: @escaping @Sendable (Error) -> Void
+    errorCallback: @escaping @Sendable (any Error) -> Void
   ) async throws -> URL {
     try FileManager.default.createDirectory(
       at: directory,
