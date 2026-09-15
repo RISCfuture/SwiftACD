@@ -253,7 +253,7 @@ extension `Downloader tests` {
       }
 
       let downloader = ACDDownloader(session: session)
-      let url = try await downloader.download(into: directory, progressCallback: nil)
+      let url = try await downloader.download(into: directory, progress: nil)
 
       #expect(url.lastPathComponent == "some.xlsx")
       let written = try Data(contentsOf: url)
@@ -291,7 +291,7 @@ extension `Downloader tests` {
       }
 
       let downloader = ACDDownloader(session: session)
-      let url = try await downloader.download(into: directory, progressCallback: nil)
+      let url = try await downloader.download(into: directory, progress: nil)
 
       // Extension-less URLs get `.xlsx` appended so the rest of the pipeline
       // (Parser.findACDWorkbook) finds the file.
@@ -313,7 +313,7 @@ extension `Downloader tests` {
 
       let downloader = ACDDownloader(session: session)
       do {
-        _ = try await downloader.download(into: directory, progressCallback: nil)
+        _ = try await downloader.download(into: directory, progress: nil)
         Issue.record("expected ACDSpreadsheetLinkNotFound")
       } catch let error as SwiftACDError {
         guard case .ACDSpreadsheetLinkNotFound = error else {
@@ -336,7 +336,7 @@ extension `Downloader tests` {
 
       let downloader = ACDDownloader(session: session)
       do {
-        _ = try await downloader.download(into: directory, progressCallback: nil)
+        _ = try await downloader.download(into: directory, progress: nil)
         Issue.record("expected networkError")
       } catch let error as SwiftACDError {
         guard case .networkError = error else {
@@ -387,7 +387,7 @@ extension `Downloader tests` {
       )
       let result = try await downloader.download(
         into: directory,
-        progressCallback: nil,
+        progress: nil,
         errorCallback: { _ in }
       )
 
@@ -431,7 +431,7 @@ extension `Downloader tests` {
 
       _ = try await downloader.download(
         into: directory,
-        progressCallback: nil,
+        progress: nil,
         errorCallback: { error in errors.append(error) }
       )
 
@@ -479,7 +479,7 @@ extension `Downloader tests` {
 
       _ = try await downloader.download(
         into: directory,
-        progressCallback: nil,
+        progress: nil,
         errorCallback: { _ in }
       )
 

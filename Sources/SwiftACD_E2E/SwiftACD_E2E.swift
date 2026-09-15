@@ -1,5 +1,6 @@
 import ArgumentParser
 import Foundation
+import Observation
 import SwiftACD
 
 @main
@@ -65,28 +66,19 @@ extension SwiftACD_E2E {
       let dir = URL(fileURLWithPath: directory)
       let parser = Parser(directory: dir)
 
-      let progress = AsyncProgress()
-      let monitor = Task {
-        var lastPercent = -1
-        while !Task.isCancelled {
-          let percent = Int((await progress.percentDone) ?? 0)
-          if percent != lastPercent {
-            FileHandle.standardError.write(Data("\rparsing: \(percent)%   ".utf8))
-            lastPercent = percent
-          }
-          if await progress.isFinished { break }
-          try? await Task.sleep(for: .milliseconds(100))
-        }
-      }
+      // `ProgressManager` is `Observable`, so progress is followed by
+      // observation rather than by polling on a timer.
+      let progress = ProgressManager(totalCount: 1)
+      let monitor = Task { await renderProgress(of: progress) }
 
       let errorCount = ErrorCounter()
       let profiles = try await parser.parse(
-        progress: progress,
+        progress: progress.subprogress(assigningCount: 1),
         errorCallback: { error in
           Task { await errorCount.add(error) }
         }
       )
-      monitor.cancel()
+      await monitor.value
       print("")
       let totalErrors = await errorCount.total
       FileHandle.standardError.write(
@@ -138,6 +130,25 @@ extension SwiftACD_E2E {
 }
 
 // MARK: - helpers
+
+// Renders each distinct whole-percent value the parse passes through.
+// `Observations.untilFinished` terminates on its own once the manager reports
+// finished, so the final 100% is written after the sequence ends.
+private func renderProgress(of progress: ProgressManager) async {
+  func write(_ percent: Int) {
+    FileHandle.standardError.write(Data("\rparsing: \(percent)%   ".utf8))
+  }
+
+  var lastPercent = -1
+  let percentages = Observations.untilFinished { () -> Observations<Int, Never>.Iteration in
+    progress.isFinished ? .finish : .next(Int(progress.fractionCompleted * 100))
+  }
+  for await percent in percentages where percent != lastPercent {
+    write(percent)
+    lastPercent = percent
+  }
+  write(100)
+}
 
 private actor ErrorCounter {
   private(set) var total: Int = 0

@@ -90,14 +90,14 @@ struct ACDDownloader: Sendable {
 
   func download(
     into directory: URL,
-    progressCallback: ProgressCallback?
+    progress: ProgressManager?
   ) async throws -> URL {
     let html = try await fetchLandingPage()
     let xlsxURL = try resolveXlsxURL(from: html)
     return try await downloadFile(
       from: xlsxURL,
       into: directory,
-      progressCallback: progressCallback
+      progress: progress
     )
   }
 
@@ -131,7 +131,7 @@ struct ACDDownloader: Sendable {
   private func downloadFile(
     from url: URL,
     into directory: URL,
-    progressCallback: ProgressCallback?
+    progress: ProgressManager?
   ) async throws -> URL {
     var request = URLRequest(url: url)
     request.setValue(userAgent, forHTTPHeaderField: "User-Agent")
@@ -149,7 +149,12 @@ struct ACDDownloader: Sendable {
       let (data, response) = try await session.data(for: request)
       try ensureHTTPSuccess(request: request, response: response)
       try data.write(to: fileURL)
-      progressCallback?(.init(Int64(data.count), of: Int64(data.count)))
+      // One indivisible unit: without a streaming API there is nothing to
+      // report until the whole body has arrived.
+      progress?.totalByteCount = UInt64(data.count)
+      progress?.completedByteCount = UInt64(data.count)
+      progress?.setTotalCount(1)
+      progress?.setCompletedCount(1)
     #else
       let (bytes, response) = try await session.bytes(for: request)
       try ensureHTTPSuccess(request: request, response: response)
@@ -160,28 +165,28 @@ struct ACDDownloader: Sendable {
       defer { try? handle.close() }
 
       let total = (response as? HTTPURLResponse)?.expectedContentLength ?? -1
-      var written: Int64 = 0
+      if total > 0 {
+        progress?.setTotalCount(Int(total))
+        progress?.totalByteCount = UInt64(total)
+      }
+      var written = 0
       var buffer = Data()
       buffer.reserveCapacity(64 * 1024)
 
+      func flush(_ buffer: inout Data) throws {
+        guard !buffer.isEmpty else { return }
+        try handle.write(contentsOf: buffer)
+        written += buffer.count
+        buffer.removeAll(keepingCapacity: true)
+        progress?.setCompletedCount(written)
+        progress?.completedByteCount = UInt64(written)
+      }
+
       for try await byte in bytes {
         buffer.append(byte)
-        if buffer.count >= 64 * 1024 {
-          try handle.write(contentsOf: buffer)
-          written += Int64(buffer.count)
-          buffer.removeAll(keepingCapacity: true)
-          if let progressCallback {
-            progressCallback(.init(written, of: max(total, written)))
-          }
-        }
+        if buffer.count >= 64 * 1024 { try flush(&buffer) }
       }
-      if !buffer.isEmpty {
-        try handle.write(contentsOf: buffer)
-        written += Int64(buffer.count)
-        if let progressCallback {
-          progressCallback(.init(written, of: max(total, written)))
-        }
-      }
+      try flush(&buffer)
     #endif
 
     return fileURL

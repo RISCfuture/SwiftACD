@@ -199,7 +199,7 @@ struct `APD parser` {
 
     let errors = ErrorBox()
     let parser = APDParser(directory: tmp)
-    let records = try await parser.parse(errorCallback: { errors.append($0) })
+    let records = try await parser.parse(progress: nil, errorCallback: { errors.append($0) })
 
     #expect(errors.all.isEmpty)
     #expect(records.count == ICAOs.count)
@@ -222,7 +222,7 @@ struct `APD parser` {
 
     let errors = ErrorBox()
     let parser = APDParser(directory: tmp)
-    let records = try await parser.parse(errorCallback: { errors.append($0) })
+    let records = try await parser.parse(progress: nil, errorCallback: { errors.append($0) })
 
     #expect(records["A320"] != nil)
     #expect(records["XXXX"] == nil)
