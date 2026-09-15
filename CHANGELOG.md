@@ -2,6 +2,24 @@
 
 All notable changes to SwiftACD will be documented in this file. The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.2.1] - 2026-09-14
+
+### Changed
+
+- Raised the minimum dependency versions to SwiftSoup 2.13.7,
+  swift-argument-parser 1.8.2, and swift-docc-plugin 1.5.0.
+- The package now declares Swift language mode 5 alongside mode 6, so a package
+  that has not moved to mode 6 can still depend on SwiftACD. The required Swift
+  tools version is unchanged at 6.3.
+
+### Fixed
+
+- Documentation: the Domain Enums topic no longer links to `WingPosition`,
+  `EnginePosition`, `TailConfiguration`, or `LandingGearConfiguration`, which
+  the library does not define — `Recognition` exposes those fields as `String?`.
+  `Parser.init(directory:)` links to `Downloader.downloadAll(errorCallback:)`
+  with its argument label, so the symbol resolves.
+
 ## [0.2.0] - 2026-07-06
 
 ### Added

@@ -15,7 +15,7 @@ both into one queryable dictionary keyed by ICAO type designator (`B738`,
 ## Requirements
 
 - Swift 6.3+
-- macOS 13+, iOS 16+, watchOS 9+, tvOS 16+, or visionOS 1+
+- macOS 15+, iOS 18+, watchOS 11+, tvOS 18+, or visionOS 2+
 
 ## Installation
 
