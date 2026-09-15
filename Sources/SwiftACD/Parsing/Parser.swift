@@ -17,6 +17,17 @@ public import Foundation
 /// Either source may be absent; ``parse(progress:errorCallback:)`` will
 /// surface what it can. Per-record errors are routed to `errorCallback` and
 /// parsing continues; only fatal I/O errors propagate via `throws`.
+///
+/// To follow the parse, hand it a `Subprogress` from your own
+/// `ProgressManager`:
+///
+/// ```swift
+/// let manager = ProgressManager(totalCount: 100)
+/// let profiles = try await parser.parse(
+///   progress: manager.subprogress(assigningCount: 100),
+///   errorCallback: { _ in }
+/// )
+/// ```
 public struct Parser: Sendable {
 
   /// Callback invoked once for every per-record error encountered. Parsing
@@ -29,31 +40,38 @@ public struct Parser: Sendable {
   /// Designated initializer.
   ///
   /// - Parameter directory: A directory previously populated by
-  ///   ``Downloader/downloadAll(errorCallback:)`` or its constituent methods.
+  ///   ``Downloader/downloadAll(progress:errorCallback:)`` or its constituent methods.
   public init(directory: URL) {
     self.directory = directory
   }
 
   /// Parse the directory and return the merged composite profiles.
   ///
-  /// - Parameter progress: Optional progress sink. Total bytes are sized
-  ///   from the FAA workbook plus the sum of every APD `.html` file's size.
+  /// - Parameter progress: Optional progress sink. The FAA and EUROCONTROL legs
+  ///   are weighted by their on-disk byte totals, so the reported fraction
+  ///   tracks the work remaining rather than the number of sources left.
   /// - Parameter errorCallback: Per-record error sink.
   /// - Returns: A dictionary of ``AircraftProfile`` keyed by ICAO type
   ///   designator.
   public func parse(
-    progress: AsyncProgress? = nil,
+    progress: consuming Subprogress? = nil,
     errorCallback: @escaping ErrorCallback
   ) async throws -> [String: AircraftProfile] {
     let ACD_URL = try findACDWorkbook()
     let APD_URL = directory.appendingPathComponent("apd", isDirectory: true)
 
-    let ACDSize =
-      (try? FileManager.default.attributesOfItem(atPath: ACD_URL.path)[.size] as? Int64) ?? 0
-    let APDSize = totalSize(of: APD_URL)
-    if let progress {
-      await progress.setTotalBytes(ACDSize + APDSize)
-    }
+    let ACDSize = Int(fileSize(of: ACD_URL))
+    let APDSize = Int(totalSize(of: APD_URL))
+
+    // Both legs run concurrently, so each gets its own `ProgressManager` wired
+    // in by reporter — a `Subprogress` could not be captured by the task
+    // group's escaping closures.
+    // Byte counts are recorded on the leaves only: `summary(of:)` sums the
+    // whole subtree, so a value on the parent as well would double-count.
+    let parent = progress?.start(totalCount: byteTotal(ACDSize + APDSize))
+    let ACDProgress = parent?.child(assigningCount: ACDSize, totalCount: byteTotal(ACDSize))
+    ACDProgress?.totalByteCount = UInt64(ACDSize)
+    let APDProgress = parent?.child(assigningCount: APDSize)
 
     let database = AircraftDatabase()
 
@@ -62,23 +80,38 @@ public struct Parser: Sendable {
         let parser = ACDParser(url: ACD_URL)
         let rows = try parser.parse(errorCallback: errorCallback)
         await database.add(ACDRows: rows)
-        if let progress {
-          await progress.addBytes(ACDSize)
-        }
+        // CoreXLSX parses the workbook in one shot, so the leg reports as a
+        // single step rather than incrementally.
+        ACDProgress?.completedByteCount = UInt64(ACDSize)
+        ACDProgress?.finish()
       }
       group.addTask { [APD_URL] in
-        guard FileManager.default.fileExists(atPath: APD_URL.path) else { return }
-        let parser = APDParser(directory: APD_URL)
-        let records = try await parser.parse(errorCallback: errorCallback)
-        await database.add(APDRecords: records)
-        if let progress {
-          await progress.addBytes(APDSize)
+        guard FileManager.default.fileExists(atPath: APD_URL.path) else {
+          APDProgress?.finish()
+          return
         }
+        let parser = APDParser(directory: APD_URL)
+        let records = try await parser.parse(
+          progress: APDProgress,
+          errorCallback: errorCallback
+        )
+        await database.add(APDRecords: records)
+        // Per-file byte totals exclude anything the parser skipped, so settle
+        // the leg rather than leaving a rounding gap.
+        APDProgress?.finish()
       }
       try await group.waitForAll()
     }
 
     return await database.merged()
+  }
+
+  // `ProgressManager` reports a `fractionCompleted` of NaN for a total of zero,
+  // so an empty source is modelled as indeterminate instead.
+  private func byteTotal(_ bytes: Int) -> Int? { bytes > 0 ? bytes : nil }
+
+  private func fileSize(of url: URL) -> Int64 {
+    (try? FileManager.default.attributesOfItem(atPath: url.path)[.size] as? Int64) ?? 0
   }
 
   private func findACDWorkbook() throws -> URL {

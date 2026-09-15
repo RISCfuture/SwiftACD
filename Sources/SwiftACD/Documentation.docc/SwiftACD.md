@@ -28,9 +28,6 @@ get the unit you need.
 
 - ``Parser``
 - ``Downloader``
-- ``AsyncProgress``
-- ``Progress``
-- ``ProgressCallback``
 
 ### Composite Models
 

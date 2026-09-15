@@ -214,21 +214,42 @@ struct APDParser {
       && url.lastPathComponent != APDDownloader.listPageFilename
   }
 
+  private static func byteSize(of url: URL) -> Int {
+    (try? url.resourceValues(forKeys: [.fileSizeKey]).fileSize) ?? 0
+  }
+
+  // Pages are parsed concurrently, so `progress` is a `ProgressManager` — a
+  // `Subprogress` is noncopyable and cannot be captured by `group.addTask`.
+  // Each page is weighted by its byte size so a handful of large pages don't
+  // read as the same amount of work as a handful of small ones.
   func parse(
+    progress: ProgressManager?,
     errorCallback: @escaping @Sendable (any Error) -> Void
   ) async throws -> [String: APDRecord] {
     let fileManager = FileManager.default
     let contents = try fileManager.contentsOfDirectory(
       at: directory,
-      includingPropertiesForKeys: nil,
+      includingPropertiesForKeys: [.fileSizeKey],
       options: [.skipsHiddenFiles]
     )
     let htmlFiles = contents.filter(Self.isDetailPage)
+    let sizes = htmlFiles.map { Self.byteSize(of: $0) }
+    let totalBytes = sizes.reduce(0, +)
+
+    progress?.setTotalCount(totalBytes > 0 ? totalBytes : nil)
+    progress?.totalByteCount = UInt64(totalBytes)
+    progress?.totalFileCount = htmlFiles.count
 
     return try await withThrowingTaskGroup(of: (String, APDRecord)?.self) { group in
-      for url in htmlFiles {
+      for (url, size) in zip(htmlFiles, sizes) {
         let ICAO = url.deletingPathExtension().lastPathComponent
         group.addTask {
+          defer {
+            // A page counts as read whether or not it parsed, so a page that
+            // fails still advances the leg. `complete(count:)` is an atomic
+            // increment, unlike a read-modify-write on `completedByteCount`.
+            progress?.complete(count: size)
+          }
           do {
             let record = try Self.parseFile(at: url, ICAO: ICAO)
             return (ICAO, record)
@@ -246,6 +267,8 @@ struct APDParser {
           records[ICAO] = record
         }
       }
+      progress?.completedByteCount = UInt64(totalBytes)
+      progress?.completedFileCount = htmlFiles.count
       return records
     }
   }

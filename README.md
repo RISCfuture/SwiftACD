@@ -14,8 +14,8 @@ both into one queryable dictionary keyed by ICAO type designator (`B738`,
 
 ## Requirements
 
-- Swift 6.3+
-- macOS 15+, iOS 18+, watchOS 11+, tvOS 18+, or visionOS 2+
+- Swift 6.4+
+- macOS 27+, iOS 27+, watchOS 27+, tvOS 27+, or visionOS 27+
 
 ## Installation
 
@@ -55,9 +55,7 @@ the directory yourself, pass a `workingDirectory:` URL to the initializer.
 
 ```swift
 let parser = Parser(directory: directory)
-let progress = AsyncProgress()
 let profiles = try await parser.parse(
-    progress: progress,
     errorCallback: { error in
         // Per-record errors. The row/page is skipped; parsing continues.
         print("skipped:", error.localizedDescription)
@@ -66,6 +64,25 @@ let profiles = try await parser.parse(
 ```
 
 The result is a `[String: AircraftProfile]` keyed by ICAO type designator.
+
+To follow progress, pass a `Subprogress` from your own `ProgressManager`.
+`ProgressManager` is `Observable`, so you can observe it instead of polling:
+
+```swift
+let progress = ProgressManager(totalCount: 1)
+let monitor = Task {
+    for await percent in Observations.untilFinished({
+        progress.isFinished ? .finish : .next(Int(progress.fractionCompleted * 100))
+    }) {
+        print("\(percent)%")
+    }
+}
+let profiles = try await parser.parse(
+    progress: progress.subprogress(assigningCount: 1),
+    errorCallback: { _ in }
+)
+await monitor.value
+```
 
 ### 3. Look up an aircraft and read typed fields
 

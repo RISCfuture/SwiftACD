@@ -132,7 +132,7 @@ struct APDDownloader: Sendable {
   // itself is required and propagates as a thrown error.
   func download(
     into directory: URL,
-    progressCallback: ProgressCallback?,
+    progress: ProgressManager?,
     errorCallback: @escaping @Sendable (any Error) -> Void
   ) async throws -> URL {
     try FileManager.default.createDirectory(
@@ -147,8 +147,8 @@ struct APDDownloader: Sendable {
     //    ASP.NET WebForms grid that uses __doPostBack, so we replay each
     //    Page$N postback in sequence to harvest all designators.
     let ICAOs = try await enumerateAllICAOs(initialHTML: listHTML)
-    let total = Int64(ICAOs.count)
-    let counter = Counter()
+    progress?.setTotalCount(ICAOs.isEmpty ? nil : ICAOs.count)
+    progress?.totalFileCount = ICAOs.count
 
     // 3. Fetch each detail page with bounded concurrency + delay between
     //    request *starts*.
@@ -175,8 +175,11 @@ struct APDDownloader: Sendable {
           } catch {
             errorCallback(error)
           }
-          let completed = await counter.increment()
-          progressCallback?(.init(completed, of: total))
+          // A page counts as visited whether or not it parsed, so a run of
+          // failures still advances to completion. `complete(count:)` is an
+          // atomic increment; `completedFileCount` is settled once the group
+          // drains, since `+=` from concurrent tasks would lose updates.
+          progress?.complete(count: 1)
         }
         inFlight += 1
       }
@@ -184,6 +187,7 @@ struct APDDownloader: Sendable {
       // Drain the rest.
       try await group.waitForAll()
     }
+    progress?.completedFileCount = ICAOs.count
 
     return directory
   }
@@ -282,14 +286,5 @@ struct APDDownloader: Sendable {
     let (data, response) = try await session.data(for: request)
     try ensureHTTPSuccess(request: request, response: response)
     return String(data: data, encoding: .utf8) ?? ""
-  }
-}
-
-private actor Counter {
-  private var value: Int64 = 0
-
-  func increment() -> Int64 {
-    value += 1
-    return value
   }
 }

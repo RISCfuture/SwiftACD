@@ -89,17 +89,20 @@ struct `Parser facade` {
   }
 
   @Test
-  func `reports progress reaching total bytes`() async throws {
+  func `reports progress reaching completion`() async throws {
     let dir = try Self.makeFixtureDirectory()
     defer { try? FileManager.default.removeItem(at: dir) }
 
-    let progress = AsyncProgress()
+    let progress = ProgressManager(totalCount: 1)
     let parser = Parser(directory: dir)
-    _ = try await parser.parse(progress: progress, errorCallback: { _ in })
+    _ = try await parser.parse(
+      progress: progress.subprogress(assigningCount: 1),
+      errorCallback: { _ in }
+    )
 
-    let completed = await progress.completed
-    let total = await progress.total
-    #expect(total > 0)
-    #expect(completed == total)
+    #expect(progress.isFinished)
+    #expect(progress.fractionCompleted == 1.0)
+    // Both legs report their on-disk byte totals up the tree.
+    #expect(progress.summary(of: \.totalByteCount) > 0)
   }
 }
