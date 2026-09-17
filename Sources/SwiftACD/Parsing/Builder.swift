@@ -81,9 +81,10 @@ struct Builder: Sendable {
 
   private static func makeVariant(ICAO: String, index: Int, row: ACDRow) -> Variant {
     let dims = dimensions(
-      wingspan: row.wingspanFt,
+      wingspan: row.wingspanFt ?? row.wingspanWithWingletsFt,
       length: row.lengthFt,
-      tailHeight: row.tailHeightFt
+      tailHeight: row.tailHeightFt,
+      wingspanWithWinglets: row.wingspanWithWingletsFt
     )
     let wts = weights(
       MTOW: row.MTOWLb,
@@ -111,10 +112,16 @@ struct Builder: Sendable {
   // MARK: - Dimensions
 
   private static func mergedDimensions(primary: ACDRow?, APD: APDRecord?) -> Dimensions? {
-    let wingspan = primary?.wingspanFt ?? APD?.dimensions.wingspanFt
+    let wingspan =
+      primary?.wingspanFt ?? primary?.wingspanWithWingletsFt ?? APD?.dimensions.wingspanFt
     let length = primary?.lengthFt ?? APD?.dimensions.lengthFt
     let tailHeight = primary?.tailHeightFt ?? APD?.dimensions.heightFt
-    return dimensions(wingspan: wingspan, length: length, tailHeight: tailHeight)
+    return dimensions(
+      wingspan: wingspan,
+      length: length,
+      tailHeight: tailHeight,
+      wingspanWithWinglets: primary?.wingspanWithWingletsFt
+    )
   }
 
   // Returns `nil` only when every component is `nil`; otherwise missing
@@ -122,13 +129,17 @@ struct Builder: Sendable {
   private static func dimensions(
     wingspan: Double?,
     length: Double?,
-    tailHeight: Double?
+    tailHeight: Double?,
+    wingspanWithWinglets: Double?
   ) -> Dimensions? {
-    if wingspan == nil && length == nil && tailHeight == nil { return nil }
+    if wingspan == nil && length == nil && tailHeight == nil && wingspanWithWinglets == nil {
+      return nil
+    }
     return Dimensions(
       wingspanFt: wingspan ?? 0,
       lengthFt: length ?? 0,
-      tailHeightFt: tailHeight ?? 0
+      tailHeightFt: tailHeight ?? 0,
+      wingspanWithWingletsFt: wingspanWithWinglets
     )
   }
 

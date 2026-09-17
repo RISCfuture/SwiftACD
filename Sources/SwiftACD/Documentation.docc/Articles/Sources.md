@@ -43,10 +43,12 @@ variants under one ICAO, iterate ``AircraftProfile/variants``.
 
 ## Variant fan-out
 
-The FAA workbook commonly publishes multiple rows for a single ICAO
-designator (for example, `B738` is recorded both with and without winglets,
-and freighter variants are recorded separately from passenger variants).
-SwiftACD preserves every row in ``AircraftProfile/variants``: each entry is a
+The FAA workbook may publish more than one row for a single ICAO designator
+when it records distinct airframes under one code (for example, a freighter
+alongside its passenger equivalent). Configurations that differ only in
+whether winglets are fitted are not split into rows: the workbook carries a
+second wingspan column instead, surfaced as
+``Dimensions/wingspanWithWinglets``. SwiftACD preserves every row in ``AircraftProfile/variants``: each entry is a
 ``Variant`` with the full FAA-row payload (manufacturer, model, dimensions,
 weights, categories, approach speed). The aggregated top-level fields on
 ``AircraftProfile`` come from the first variant; consumers that care about a

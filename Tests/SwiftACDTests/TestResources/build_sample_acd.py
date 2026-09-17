@@ -26,7 +26,8 @@ HEADERS = [
   "ADG",
   "TDG",
   "MTOW (lbs)",
-  "Wingspan (ft)",
+  "Wingspan_ft_without_winglets_sharklets",
+  "Wingspan_ft_with_winglets_sharklets",
   "Length (ft)",
   "Tail Height (ft)",
   "MGW (ft)",
@@ -34,15 +35,18 @@ HEADERS = [
   "Approach Speed (kt)",
 ]
 
+# The FAA records winglet-equipped types in a second wingspan column, and
+# publishes only that column for types never offered without them (GLF6, and
+# the 737-800W row here).
 ROWS = [
-  ["B738", "Boeing", "737-800",        "C", "III", "3", 174200, 117.4, 129.5, 41.3, 18.9, 49.2, 142],
-  ["B738", "Boeing", "737-800W",       "C", "III", "3", 174200, 117.4, 129.5, 41.3, 18.9, 49.2, 142],
-  ["A320", "Airbus", "A320-200",       "C", "III", "3", 169755, 111.8, 123.3, 38.6, 24.6, 41.7, 138],
-  ["C172", "Cessna", "172 Skyhawk",    "A", "I",   "1A",  2550,  36.1,  27.2,  8.9,   8.4,  6.1,  61],
-  ["B748", "Boeing", "747-8 Intercont","D", "VI",  "7",  987000, 224.4, 250.2, 63.5, 36.1,116.8, 154],
-  ["DH8D", "Bombardier", "Dash 8 Q400","B", "III", "3",  64500,  93.3,  107.8, 27.4, 24.6, 38.0, 121],
-  ["GLF6", "Gulfstream", "G650",       "C", "II",  "2A", 99600,  99.6,   99.7, 25.6, 14.8, 39.1, 132],
-  ["XXXX", "BadEnumCo", "InvalidADG",  "C", "ZZZ", "3",  10000,  40.0,   30.0,  9.0,  8.0,  6.0, 100],
+  ["B738", "Boeing", "737-800",        "C", "III", "3", 174200, 112.6,    "", 129.5, 41.3, 18.9, 49.2, 142],
+  ["B738", "Boeing", "737-800W",       "C", "III", "3", 174200,    "", 117.4, 129.5, 41.3, 18.9, 49.2, 142],
+  ["A320", "Airbus", "A320-200",       "C", "III", "3", 169755, 111.8, 117.5, 123.3, 38.6, 24.6, 41.7, 138],
+  ["C172", "Cessna", "172 Skyhawk",    "A", "I",   "1A",  2550,  36.1,    "",  27.2,  8.9,   8.4,  6.1,  61],
+  ["B748", "Boeing", "747-8 Intercont","D", "VI",  "7",  987000, 224.4,   "", 250.2, 63.5, 36.1,116.8, 154],
+  ["DH8D", "Bombardier", "Dash 8 Q400","B", "III", "3",  64500,  93.3,    "", 107.8, 27.4, 24.6, 38.0, 121],
+  ["GLF6", "Gulfstream", "G650",       "C", "II",  "2A", 99600,     "",  99.6,  99.7, 25.6, 14.8, 39.1, 132],
+  ["XXXX", "BadEnumCo", "InvalidADG",  "C", "ZZZ", "3",  10000,  40.0,    "",  30.0,  9.0,  8.0,  6.0, 100],
 ]
 
 

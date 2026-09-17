@@ -15,6 +15,7 @@ struct `Builder tests` {
     model: String = "A320",
     MTOW: Double? = 169_755,
     wingspan: Double? = 111.8,
+    wingspanWithWinglets: Double? = 117.5,
     length: Double? = 123.3,
     tailHeight: Double? = 38.6,
     mainGearWidth: Double? = 24.6,
@@ -32,6 +33,7 @@ struct `Builder tests` {
       mainGearWidthFt: mainGearWidth,
       cockpitToMainGearFt: cockpitToMainGear,
       wingspanFt: wingspan,
+      wingspanWithWingletsFt: wingspanWithWinglets,
       lengthFt: length,
       tailHeightFt: tailHeight,
       approachSpeedKt: approachSpeed
@@ -53,7 +55,8 @@ struct `Builder tests` {
       MTOWLb: MTOW,
       mainGearWidthFt: 18.9,
       cockpitToMainGearFt: 53.0,
-      wingspanFt: 117.5,
+      wingspanFt: 112.6,
+      wingspanWithWingletsFt: 117.5,
       lengthFt: 129.5,
       tailHeightFt: 41.2,
       approachSpeedKt: 142
@@ -323,6 +326,7 @@ struct `Builder tests` {
     let row = Self.a320ACDRow(
       MTOW: 12_500,
       wingspan: nil,
+      wingspanWithWinglets: nil,
       length: nil,
       tailHeight: nil
     )

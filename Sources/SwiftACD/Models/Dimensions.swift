@@ -8,7 +8,9 @@ public import Foundation
 /// when ACD has no value.
 public struct Dimensions: Sendable, Codable, Hashable {
 
-  /// Maximum wingspan, in feet.
+  /// Wingspan, in feet. This is the FAA's wingspan without winglets or
+  /// sharklets, falling back to the winglet-equipped span when the FAA
+  /// publishes only that, and to EUROCONTROL when the FAA has no value.
   public let wingspanFt: Double
 
   /// Overall length, in feet.
@@ -17,10 +19,21 @@ public struct Dimensions: Sendable, Codable, Hashable {
   /// Tail (overall) height, in feet.
   public let tailHeightFt: Double
 
+  /// Wingspan with winglets or sharklets fitted, in feet. `nil` unless the
+  /// FAA publishes a winglet-equipped span for the type; the FAA records both
+  /// configurations for types offered either way (e.g. `B738`).
+  public let wingspanWithWingletsFt: Double?
+
   /// Wingspan as a `Measurement`. Convert to other units with
   /// `wingspan.converted(to: .meters)`.
   public var wingspan: Measurement<UnitLength> {
     .init(value: wingspanFt, unit: .feet)
+  }
+
+  /// Wingspan with winglets or sharklets as a `Measurement`, or `nil` when
+  /// the FAA publishes no winglet-equipped span.
+  public var wingspanWithWinglets: Measurement<UnitLength>? {
+    wingspanWithWingletsFt.map { .init(value: $0, unit: .feet) }
   }
 
   /// Overall length as a `Measurement`.
@@ -39,9 +52,17 @@ public struct Dimensions: Sendable, Codable, Hashable {
   ///   - wingspanFt: Maximum wingspan, in feet.
   ///   - lengthFt: Overall length, in feet.
   ///   - tailHeightFt: Tail (overall) height, in feet.
-  public init(wingspanFt: Double, lengthFt: Double, tailHeightFt: Double) {
+  ///   - wingspanWithWingletsFt: Wingspan with winglets or sharklets fitted,
+  ///     in feet.
+  public init(
+    wingspanFt: Double,
+    lengthFt: Double,
+    tailHeightFt: Double,
+    wingspanWithWingletsFt: Double? = nil
+  ) {
     self.wingspanFt = wingspanFt
     self.lengthFt = lengthFt
     self.tailHeightFt = tailHeightFt
+    self.wingspanWithWingletsFt = wingspanWithWingletsFt
   }
 }

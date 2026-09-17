@@ -83,7 +83,8 @@ if let cruise = b738.performance?.cruise, let tas = cruise.tas {
     print("Cruise TAS: \(tas), Mach \(cruise.mach ?? 0)")
 }
 
-print("Variants:", b738.variants.count)        // winglets vs. no winglets, …
+print("Winglets:", dims?.wingspanWithWinglets)  // sharklet/winglet span, if any
+print("Variants:", b738.variants.count)         // one per FAA row
 print("Sources:", b738.sources)                 // .acd, .apd, or both
 ```
 
@@ -106,10 +107,14 @@ print("Sources:", b738.sources)                 // .acd, .apd, or both
 
 - **One `AircraftProfile` per ICAO type designator.** Both sources are keyed by
   ICAO Doc 8643 type designator, so the join is exact.
-- **Every FAA row is preserved.** The FAA spreadsheet often records multiple
-  rows for the same designator (e.g. `B738` with and without winglets). All of
-  them are exposed through `AircraftProfile.variants` so callers can address a
-  specific configuration.
+- **Every FAA row is preserved.** When the FAA spreadsheet records more than
+  one row for a designator, all of them are exposed through
+  `AircraftProfile.variants` so callers can address a specific configuration.
+- **Both wingspans are kept.** The FAA publishes wingspan in two columns, with
+  and without winglets or sharklets. `Dimensions.wingspan` is the span without
+  them — or the winglet-equipped span for a type the FAA lists only that way —
+  and `Dimensions.wingspanWithWinglets` carries the second column when there
+  is one.
 - **Conflict resolution: prefer FAA, fall back to APD.** For fields that both
   sources publish (manufacturer, model, wingspan, length, tail height, MTOW,
   approach category), the top-level field comes from the first FAA row and

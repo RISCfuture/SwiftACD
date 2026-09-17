@@ -48,11 +48,22 @@ struct `ACD parser` {
     #expect(a320.taxiwayDesignGroup == .group3)
     #expect(a320.MTOWLb == 169_755)
     #expect(a320.wingspanFt == 111.8)
+    #expect(a320.wingspanWithWingletsFt == 117.5)
     #expect(a320.lengthFt == 123.3)
     #expect(a320.tailHeightFt == 38.6)
     #expect(a320.mainGearWidthFt == 24.6)
     #expect(a320.cockpitToMainGearFt == 41.7)
     #expect(a320.approachSpeedKt == 138)
+  }
+
+  @Test
+  func `reads the winglet-equipped wingspan for a type the FAA lists only that way`() throws {
+    let parser = ACDParser(url: try Self.fixture())
+    let rows = try parser.parse(errorCallback: { _ in })
+    let glf6 = try #require(rows.first { $0.ICAOTypeDesignator == "GLF6" })
+
+    #expect(glf6.wingspanFt == nil)
+    #expect(glf6.wingspanWithWingletsFt == 99.6)
   }
 
   @Test

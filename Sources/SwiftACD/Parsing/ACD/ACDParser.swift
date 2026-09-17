@@ -89,6 +89,8 @@ struct ACDParser {
       mainGearWidthFt: get(columns.mainGearWidth).flatMap(ParsingHelpers.parseDouble),
       cockpitToMainGearFt: get(columns.cockpitToMainGear).flatMap(ParsingHelpers.parseDouble),
       wingspanFt: get(columns.wingspan).flatMap(ParsingHelpers.parseDouble),
+      wingspanWithWingletsFt: get(columns.wingspanWithWinglets)
+        .flatMap(ParsingHelpers.parseDouble),
       lengthFt: get(columns.length).flatMap(ParsingHelpers.parseDouble),
       tailHeightFt: get(columns.tailHeight).flatMap(ParsingHelpers.parseDouble),
       approachSpeedKt: get(columns.approachSpeed).flatMap(ParsingHelpers.parseDouble)

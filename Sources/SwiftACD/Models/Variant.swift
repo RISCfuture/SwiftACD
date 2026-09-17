@@ -4,8 +4,7 @@ public import Foundation
 /// callers can introspect every variant under an ICAO type designator.
 ///
 /// Multiple `Variant`s exist for one ICAO type when the spreadsheet records
-/// distinct configurations (e.g. winglets vs. no winglets, freighter vs.
-/// passenger). The aggregated, top-level fields on ``AircraftProfile`` come
+/// distinct configurations (e.g. freighter vs. passenger). The aggregated, top-level fields on ``AircraftProfile`` come
 /// from the first variant; consumers that care about a specific configuration
 /// should iterate ``AircraftProfile/variants``.
 public struct Variant: Sendable, Codable, Hashable, Identifiable {

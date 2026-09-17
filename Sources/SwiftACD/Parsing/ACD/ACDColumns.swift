@@ -13,6 +13,7 @@ struct ACDColumns: Sendable {
   let mainGearWidth: Int?
   let cockpitToMainGear: Int?
   let wingspan: Int?
+  let wingspanWithWinglets: Int?
   let length: Int?
   let tailHeight: Int?
   let approachSpeed: Int?
@@ -21,11 +22,16 @@ struct ACDColumns: Sendable {
   static func resolve(headerRow: [String]) throws -> Self {
     let normalized = headerRow.map(Self.normalize)
 
+    // Candidates are tried in order, so a more specific spelling can claim its
+    // column before a broader one matches a neighboring column: the workbook
+    // carries both `Wingspan_ft_without_winglets_sharklets` and
+    // `Wingspan_ft_with_winglets_sharklets`, and plain `"wingspan"` matches
+    // either.
     func find(_ candidates: [String]) -> Int? {
-      let needles = candidates.map(Self.normalize)
-      return normalized.firstIndex { cell in
-        needles.contains { cell.contains($0) }
+      for needle in candidates.map(Self.normalize) {
+        if let index = normalized.firstIndex(where: { $0.contains(needle) }) { return index }
       }
+      return nil
     }
 
     guard let ICAO = find(["icao", "designator", "type designator"]) else {
@@ -42,7 +48,8 @@ struct ACDColumns: Sendable {
       MTOW: find(["mtow", "max takeoff", "maximum takeoff", "mgw lbs", "max takeoff weight"]),
       mainGearWidth: find(["mgw", "main gear width", "main landing gear width"]),
       cockpitToMainGear: find(["cmg", "cockpit to main", "cockpit to main gear"]),
-      wingspan: find(["wingspan", "wing span"]),
+      wingspan: find(["without winglets", "without sharklets", "wingspan", "wing span"]),
+      wingspanWithWinglets: find(["with winglets", "with sharklets"]),
       length: find(["length", "fuselage length", "overall length"]),
       tailHeight: find(["tail height", "height", "vertical tail"]),
       approachSpeed: find(["approach speed", "vref", "vat"])

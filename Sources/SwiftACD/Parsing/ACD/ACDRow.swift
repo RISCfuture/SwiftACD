@@ -14,6 +14,7 @@ struct ACDRow: Sendable, Hashable {
   let cockpitToMainGearFt: Double?
 
   let wingspanFt: Double?
+  let wingspanWithWingletsFt: Double?
   let lengthFt: Double?
   let tailHeightFt: Double?
 

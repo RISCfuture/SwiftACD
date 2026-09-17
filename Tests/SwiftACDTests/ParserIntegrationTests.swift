@@ -62,6 +62,8 @@ struct `Parser facade` {
     #expect(a320.categories.wakeTurbulence == .medium)
     #expect(a320.categories.RECAT_EU == .upperMedium)
     #expect(a320.performance?.takeoff?.v2Kt == 145)
+    #expect(a320.dimensions?.wingspanFt == 111.8)
+    #expect(a320.dimensions?.wingspanWithWingletsFt == 117.5)
 
     // FAA wins for overlapping fields — A320 ACD MTOW is 169755 lbs.
     // APD MTOW is 73900 kg ≈ 162929 lbs. Composite should be the FAA value.
@@ -76,6 +78,9 @@ struct `Parser facade` {
     // GLF6 has no APD — sources should be ACD-only
     let glf6 = try #require(profiles["GLF6"])
     #expect(glf6.sources == .ACD)
+    // The FAA publishes only a winglet-equipped span for the G650, and with no
+    // APD to fall back on the composite wingspan comes from that column.
+    #expect(glf6.dimensions?.wingspanFt == 99.6)
     #expect(glf6.performance == nil)
 
     // EC25 has no ACD — sources should be APD-only

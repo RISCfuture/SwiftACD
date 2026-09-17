@@ -8,7 +8,7 @@ import Foundation
 /// follow a **prefer-FAA, fall back to APD** rule for overlapping data; FAA-
 /// only and APD-only fields come from their authoritative source. Every
 /// matching ACD row is preserved in ``variants`` so callers can address
-/// individual configurations (e.g. winglets vs. no winglets).
+/// individual configurations (e.g. freighter vs. passenger).
 public struct AircraftProfile: Sendable, Codable, Hashable, Identifiable {
 
   /// ICAO aircraft type designator. Same as ``Identity/ICAOTypeDesignator``.

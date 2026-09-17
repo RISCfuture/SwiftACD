@@ -4,11 +4,21 @@ All notable changes to SwiftACD will be documented in this file. The format is b
 
 ## [Unreleased]
 
+### Added
+
+- `Dimensions.wingspanWithWinglets` (and its `wingspanWithWingletsFt` scalar)
+  expose the FAA's winglet/sharklet wingspan column, which the parser
+  previously ignored.
+
 ### Fixed
 
 - The EUROCONTROL index page (`apd/listpage.html`) is no longer parsed as an
   aircraft detail page, so the profile dictionary no longer contains an empty
   entry keyed `listpage`.
+- Types whose FAA row fills in only the winglet-equipped wingspan column (for
+  example `GLF6` and the E-Jets) no longer report a wingspan of 0 ft;
+  `Dimensions.wingspan` falls back to that column before falling back to
+  EUROCONTROL.
 
 ## [0.2.1] - 2026-09-14
 
