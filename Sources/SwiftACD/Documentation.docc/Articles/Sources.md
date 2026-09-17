@@ -77,7 +77,7 @@ specific configuration should iterate ``AircraftProfile/variants`` directly.
 | ``Categories/designGroup`` | FAA only | Airplane Design Group (I–VI). |
 | ``Categories/taxiwayDesignGroup`` | FAA only | Taxiway Design Group (1A–7). |
 | ``Categories/wakeTurbulence`` | APD only | ICAO WTC: L/M/H/J. |
-| ``Categories/RECAT_EU`` | APD only | RECAT-EU: CAT-A through CAT-F. |
+| ``Categories/RECAT_EU`` | APD only | RECAT-EU: CAT-A through CAT-F, or `special` for types separated case by case. |
 
 ### Dimensions (all stored in feet)
 

@@ -16,8 +16,14 @@ All notable changes to SwiftACD will be documented in this file. The format is b
   alongside its Mach number, and previously discarded — is available. The Mach
   itself is now `machClimb?.mach`.
 
+- `RECATEU.code` is now `String?`, because the new `RECATEU.special` case
+  carries no `CAT-X` code.
+
 ### Added
 
+- `RECATEU.special`, the `"Special"` category EUROCONTROL publishes for types
+  it separates case by case (`A225`, `B2`, `B52`), which previously decoded to
+  `nil` alongside genuinely uncategorized types.
 - `Dimensions.wingspanWithWinglets` (and its `wingspanWithWingletsFt` scalar)
   expose the FAA's winglet/sharklet wingspan column, which the parser
   previously ignored.

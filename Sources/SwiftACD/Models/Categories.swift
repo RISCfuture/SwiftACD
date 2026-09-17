@@ -112,6 +112,9 @@ public enum WakeTurbulenceCategory: String, Sendable, Codable, Hashable, CaseIte
 ///
 /// Raw values match the human-readable strings the APD page emits (e.g.
 /// `"Upper Heavy"`); use ``code`` for the formal `CAT-X` identifier.
+///
+/// EUROCONTROL also publishes `"No code"` for types it has not categorized;
+/// that value is represented by a `nil` ``Categories/RECAT_EU``.
 public enum RECATEU: String, Sendable, Codable, Hashable, CaseIterable {
   /// `CAT-A`. Super-heavy class (A380, AN-225).
   case superHeavy = "Super Heavy"
@@ -125,9 +128,13 @@ public enum RECATEU: String, Sendable, Codable, Hashable, CaseIterable {
   case lowerMedium = "Lower Medium"
   /// `CAT-F`. Light class (MTOW ≤ 15 t).
   case light = "Light"
+  /// Types EUROCONTROL separates case by case instead of by category
+  /// (e.g. `A225`, `B2`, `B52`). No `CAT-X` code is assigned.
+  case special = "Special"
 
-  /// Formal RECAT-EU code (e.g. `CAT-A`).
-  public var code: String {
+  /// Formal RECAT-EU code (e.g. `CAT-A`), or `nil` for ``special``, which
+  /// carries no code.
+  public var code: String? {
     switch self {
       case .superHeavy: return "CAT-A"
       case .upperHeavy: return "CAT-B"
@@ -135,6 +142,7 @@ public enum RECATEU: String, Sendable, Codable, Hashable, CaseIterable {
       case .upperMedium: return "CAT-D"
       case .lowerMedium: return "CAT-E"
       case .light: return "CAT-F"
+      case .special: return nil
     }
   }
 }
