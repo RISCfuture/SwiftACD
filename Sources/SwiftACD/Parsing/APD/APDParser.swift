@@ -203,6 +203,14 @@ struct APDParser {
     APDExtractors.perfDouble(document, datagraph: "cruiseCeiling").map { Int($0) }
   }
 
+  // The downloader saves the paginated index alongside the detail pages; it
+  // describes no aircraft and would otherwise be read as a record keyed
+  // `listpage`.
+  private static func isDetailPage(_ url: URL) -> Bool {
+    url.pathExtension.lowercased() == "html"
+      && url.lastPathComponent != APDDownloader.listPageFilename
+  }
+
   func parse(
     errorCallback: @escaping @Sendable (any Error) -> Void
   ) async throws -> [String: APDRecord] {
@@ -212,7 +220,7 @@ struct APDParser {
       includingPropertiesForKeys: nil,
       options: [.skipsHiddenFiles]
     )
-    let htmlFiles = contents.filter { $0.pathExtension.lowercased() == "html" }
+    let htmlFiles = contents.filter(Self.isDetailPage)
 
     return try await withThrowingTaskGroup(of: (String, APDRecord)?.self) { group in
       for url in htmlFiles {

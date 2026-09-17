@@ -28,6 +28,10 @@ struct `Parser facade` {
         to: APDDir.appendingPathComponent("\(ICAO).html")
       )
     }
+    // The downloader saves the paginated index alongside the detail pages.
+    try Data("<html><body>index</body></html>".utf8).write(
+      to: APDDir.appendingPathComponent(APDDownloader.listPageFilename)
+    )
     return dir
   }
 
@@ -46,6 +50,9 @@ struct `Parser facade` {
     #expect(profiles["B748"] != nil)
     #expect(profiles["GLF6"] != nil)  // ACD-only
     #expect(profiles["EC25"] != nil)  // APD-only (sparse)
+
+    // The APD index page is not an aircraft.
+    #expect(profiles["listpage"] == nil)
 
     // A320 should be sourced from both
     let a320 = try #require(profiles["A320"])

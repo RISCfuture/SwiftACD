@@ -13,6 +13,9 @@ struct APDDownloader: Sendable {
     string: "https://learningzone.eurocontrol.int/ilp/customs/ATCPFDB/default.aspx"
   )!
 
+  // Filename the paginated index is saved under, alongside the detail pages.
+  static let listPageFilename = "listpage.html"
+
   // Caller appends `?ICAO=XXX`.
   static let detailBase = URL(
     string: "https://learningzone.eurocontrol.int/ilp/customs/ATCPFDB/details.aspx"
@@ -192,7 +195,7 @@ struct APDDownloader: Sendable {
     let (data, response) = try await session.data(for: request)
     try ensureHTTPSuccess(request: request, response: response)
 
-    let url = directory.appendingPathComponent("listpage.html")
+    let url = directory.appendingPathComponent(Self.listPageFilename)
     try data.write(to: url)
     return String(data: data, encoding: .utf8) ?? ""
   }
