@@ -2,7 +2,7 @@
 
 All notable changes to SwiftACD will be documented in this file. The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [Unreleased]
+## [0.3.0] - 2026-09-16
 
 ### Changed (breaking)
 
@@ -10,12 +10,10 @@ All notable changes to SwiftACD will be documented in this file. The format is b
   rather than a `DescentBand`. EUROCONTROL publishes the initial descent as a
   Mach number and a rate of descent, never as an IAS, so the band the model
   asked for could never be assembled and the field was always `nil`.
-
 - `Performance.Climb.machClimb` is now a `Performance.MachClimbBand` rather
   than a bare `Double`, so the band's rate of climb — published by EUROCONTROL
   alongside its Mach number, and previously discarded — is available. The Mach
   itself is now `machClimb?.mach`.
-
 - `RECATEU.code` is now `String?`, because the new `RECATEU.special` case
   carries no `CAT-X` code.
 
