@@ -115,7 +115,8 @@ envelope.
 | Takeoff | `Performance.Takeoff.distance` | `distanceFt` |
 | Climb (initial / FL150 / FL240) | `Performance.ClimbBand.IAS` | `IASKt` |
 | Climb (initial / FL150 / FL240) | `Performance.ClimbBand.rateOfClimb` | `rateOfClimbFPM` |
-| Climb | `Performance.Climb.machClimb` | dimensionless `Double` |
+| Climb (Mach) | `Performance.MachClimbBand.mach` | dimensionless `Double` |
+| Climb (Mach) | `Performance.MachClimbBand.rateOfClimb` | `rateOfClimbFPM` |
 | Cruise | `Performance.Cruise.TAS` | `TASKt` |
 | Cruise | `Performance.Cruise.mach` | dimensionless `Double` |
 | Cruise | `Performance.Cruise.ceiling` | `ceilingFt` |

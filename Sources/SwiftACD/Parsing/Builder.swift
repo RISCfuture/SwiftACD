@@ -212,15 +212,26 @@ struct Builder: Sendable {
     let initial = climbBand(IAS: c.initialIASKt, rateOfClimb: c.initialRateOfClimbFPM)
     let toFL150 = climbBand(IAS: c.to150IASKt, rateOfClimb: c.to150RateOfClimbFPM)
     let toFL240 = climbBand(IAS: c.to240IASKt, rateOfClimb: c.to240RateOfClimbFPM)
-    if initial == nil && toFL150 == nil && toFL240 == nil && c.machClimbMach == nil {
+    let machClimb = machClimbBand(mach: c.machClimbMach, rateOfClimb: c.machClimbRateOfClimbFPM)
+    if initial == nil && toFL150 == nil && toFL240 == nil && machClimb == nil {
       return nil
     }
     return Performance.Climb(
       initialClimb: initial,
       toFL150: toFL150,
       toFL240: toFL240,
-      machClimb: c.machClimbMach
+      machClimb: machClimb
     )
+  }
+
+  // The rate is what makes a band; EUROCONTROL omits the Mach for types slow
+  // enough that it would be meaningless.
+  private static func machClimbBand(
+    mach: Double?,
+    rateOfClimb: Double?
+  ) -> Performance.MachClimbBand? {
+    guard let rateOfClimb else { return nil }
+    return Performance.MachClimbBand(mach: mach, rateOfClimbFPM: rateOfClimb)
   }
 
   private static func climbBand(IAS: Double?, rateOfClimb: Double?) -> Performance.ClimbBand? {

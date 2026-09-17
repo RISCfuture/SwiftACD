@@ -11,6 +11,11 @@ All notable changes to SwiftACD will be documented in this file. The format is b
   Mach number and a rate of descent, never as an IAS, so the band the model
   asked for could never be assembled and the field was always `nil`.
 
+- `Performance.Climb.machClimb` is now a `Performance.MachClimbBand` rather
+  than a bare `Double`, so the band's rate of climb — published by EUROCONTROL
+  alongside its Mach number, and previously discarded — is available. The Mach
+  itself is now `machClimb?.mach`.
+
 ### Added
 
 - `Dimensions.wingspanWithWinglets` (and its `wingspanWithWingletsFt` scalar)

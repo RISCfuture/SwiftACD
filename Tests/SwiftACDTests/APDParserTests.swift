@@ -96,7 +96,10 @@ struct `APD parser` {
       Self.approxEqual(r.performance.landing.distanceFt, Self.metersToFeet(1_440), tolerance: 1.0)
     )
 
-    // EUROCONTROL flies the initial descent at a Mach number, not an IAS.
+    // EUROCONTROL flies the Mach climb and the initial descent at a Mach
+    // number, not an IAS, and publishes a rate for each.
+    #expect(r.performance.climb.machClimbMach == 0.78)
+    #expect(r.performance.climb.machClimbRateOfClimbFPM == 1_000)
     #expect(r.performance.descent.initialMach == 0.78)
     #expect(r.performance.descent.initialRateOfDescentFPM == 1_000)
 

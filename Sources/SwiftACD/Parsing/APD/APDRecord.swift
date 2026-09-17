@@ -67,6 +67,7 @@ extension APDRecord {
       let to240IASKt: Double?
       let to240RateOfClimbFPM: Double?
       let machClimbMach: Double?
+      let machClimbRateOfClimbFPM: Double?
     }
 
     struct Cruise: Sendable, Hashable {

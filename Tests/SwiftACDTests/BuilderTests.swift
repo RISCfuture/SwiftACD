@@ -109,7 +109,8 @@ struct `Builder tests` {
           to150RateOfClimbFPM: 2_000,
           to240IASKt: 290,
           to240RateOfClimbFPM: 1_000,
-          machClimbMach: 0.78
+          machClimbMach: 0.78,
+          machClimbRateOfClimbFPM: 1_000
         ),
         cruise: APDRecord.Performance.Cruise(
           TASKt: 447,
@@ -169,7 +170,8 @@ struct `Builder tests` {
           to150RateOfClimbFPM: nil,
           to240IASKt: nil,
           to240RateOfClimbFPM: nil,
-          machClimbMach: nil
+          machClimbMach: nil,
+          machClimbRateOfClimbFPM: nil
         ),
         cruise: APDRecord.Performance.Cruise(
           TASKt: nil,
@@ -251,6 +253,8 @@ struct `Builder tests` {
     #expect(performance.takeoff?.v2Kt == 145)
     #expect(performance.cruise?.TASKt == 447)
     #expect(performance.landing?.vatKt == 138)
+    #expect(performance.climb?.machClimb?.mach == 0.78)
+    #expect(performance.climb?.machClimb?.rateOfClimbFPM == 1_000)
     #expect(performance.descent?.initialDescent?.mach == 0.78)
     #expect(performance.descent?.initialDescent?.rateOfDescentFPM == 3_500)
 

@@ -81,20 +81,41 @@ extension Performance {
     public let toFL150: ClimbBand?
     /// Climb to FL240 (24,000 ft).
     public let toFL240: ClimbBand?
-    /// Mach used during the Mach-climb band. Dimensionless.
-    public let machClimb: Double?
+    /// Mach-climb band, flown at a Mach number rather than at an IAS.
+    public let machClimb: MachClimbBand?
 
     /// Memberwise initializer. All fields default to `nil`.
     public init(
       initialClimb: ClimbBand? = nil,
       toFL150: ClimbBand? = nil,
       toFL240: ClimbBand? = nil,
-      machClimb: Double? = nil
+      machClimb: MachClimbBand? = nil
     ) {
       self.initialClimb = initialClimb
       self.toFL150 = toFL150
       self.toFL240 = toFL240
       self.machClimb = machClimb
+    }
+  }
+
+  /// Mach + ROC pair recorded for the Mach-climb band, which EUROCONTROL
+  /// flies at a Mach number rather than at an indicated airspeed.
+  public struct MachClimbBand: Sendable, Codable, Hashable {
+    /// Mach flown during the band, when EUROCONTROL publishes one.
+    /// Dimensionless.
+    public let mach: Double?
+    /// Rate of climb, in feet per minute.
+    public let rateOfClimbFPM: Double
+
+    /// Rate of climb expressed via `UnitSpeed.feetPerMinute`.
+    public var rateOfClimb: Measurement<UnitSpeed> {
+      .init(value: rateOfClimbFPM, unit: .feetPerMinute)
+    }
+
+    /// Memberwise initializer.
+    public init(mach: Double? = nil, rateOfClimbFPM: Double) {
+      self.mach = mach
+      self.rateOfClimbFPM = rateOfClimbFPM
     }
   }
 

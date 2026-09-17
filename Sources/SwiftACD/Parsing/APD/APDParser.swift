@@ -149,7 +149,11 @@ struct APDParser {
           to150RateOfClimbFPM: APDExtractors.perfDouble(document, datagraph: "climb150ROC"),
           to240IASKt: APDExtractors.perfDouble(document, datagraph: "climb240IAS"),
           to240RateOfClimbFPM: APDExtractors.perfDouble(document, datagraph: "climb240ROC"),
-          machClimbMach: APDExtractors.perfDouble(document, datagraph: "machClimbMACH")
+          machClimbMach: APDExtractors.perfDouble(document, datagraph: "machClimbMACH"),
+          machClimbRateOfClimbFPM: APDExtractors.perfDouble(
+            document,
+            datagraph: "machClimbROC"
+          )
         ),
         cruise: APDRecord.Performance.Cruise(
           TASKt: APDExtractors.perfDouble(document, datagraph: "cruiseTAS"),
