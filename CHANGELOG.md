@@ -30,6 +30,11 @@ All notable changes to SwiftACD will be documented in this file. The format is b
   per-record errors, and how many profiles carry each field; `--baseline <path>`
   compares that against an earlier report and exits non-zero when a field loses
   all of its values.
+- The FAA's `ICAO_WTC` column now fills `Categories.wakeTurbulence` for types
+  EUROCONTROL does not list, which carried no wake category at all before.
+  EUROCONTROL still wins where both publish one, since it gives the ICAO letter
+  directly, and a type the FAA records as straddling two categories
+  (`"Light/Medium"`) is left empty rather than rounded to one side.
 - `RECATEU.special`, the `"Special"` category EUROCONTROL publishes for types
   it separates case by case (`A225`, `B2`, `B52`), which previously decoded to
   `nil` alongside genuinely uncategorized types.

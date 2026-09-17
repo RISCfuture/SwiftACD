@@ -46,6 +46,7 @@ struct `ACD parser` {
     #expect(a320.approachCategory == .c)
     #expect(a320.designGroup == .III)
     #expect(a320.taxiwayDesignGroup == .group3)
+    #expect(a320.wakeTurbulence == .medium)
     #expect(a320.MTOWLb == 169_755)
     #expect(a320.wingspanFt == 111.8)
     #expect(a320.wingspanWithWingletsFt == 117.5)
@@ -64,6 +65,24 @@ struct `ACD parser` {
 
     #expect(glf6.wingspanFt == nil)
     #expect(glf6.wingspanWithWingletsFt == 99.6)
+  }
+
+  @Test
+  func `leaves the wake category empty for a type the FAA records as straddling two`() throws {
+    let parser = ACDParser(url: try Self.fixture())
+    var errors: [any Error] = []
+    let rows = try parser.parse(errorCallback: { errors.append($0) })
+    let dh8d = try #require(rows.first { $0.ICAOTypeDesignator == "DH8D" })
+
+    // "Light/Medium" describes a type either side of the 7,000 kg boundary; the
+    // row is kept, and rounding it to one category would be a fabrication.
+    #expect(dh8d.wakeTurbulence == nil)
+    #expect(
+      !errors.contains { error in
+        guard case SwiftACDError.unknownWakeTurbulenceCategory = error else { return false }
+        return true
+      }
+    )
   }
 
   @Test

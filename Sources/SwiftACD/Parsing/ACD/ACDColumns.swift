@@ -9,6 +9,7 @@ struct ACDColumns: Sendable {
   let approachCategory: Int?
   let designGroup: Int?
   let taxiwayDesignGroup: Int?
+  let wakeTurbulence: Int?
   let MTOW: Int?
   let mainGearWidth: Int?
   let cockpitToMainGear: Int?
@@ -45,6 +46,10 @@ struct ACDColumns: Sendable {
       approachCategory: find(["aac", "approach category"]),
       designGroup: find(["adg", "design group", "airplane design group"]),
       taxiwayDesignGroup: find(["tdg", "taxiway"]),
+      // The workbook carries several wake columns — `CWT` and the
+      // `…_Wake_Category_…` pair are FAA recategorization schemes, not ICAO WTC
+      // — so only the ICAO spellings are matched.
+      wakeTurbulence: find(["icao wtc", "wtc", "wake turbulence"]),
       MTOW: find(["mtow", "max takeoff", "maximum takeoff", "mgw lbs", "max takeoff weight"]),
       mainGearWidth: find(["mgw", "main gear width", "main landing gear width"]),
       cockpitToMainGear: find(["cmg", "cockpit to main", "cockpit to main gear"]),

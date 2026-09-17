@@ -78,6 +78,11 @@ struct ACDParser {
       }
     )
 
+    let wakeTurbulence = try parseWakeTurbulence(
+      get(columns.wakeTurbulence),
+      rowNumber: rowNumber
+    )
+
     return ACDRow(
       ICAOTypeDesignator: ICAO,
       manufacturer: get(columns.manufacturer),
@@ -85,6 +90,7 @@ struct ACDParser {
       approachCategory: approachCategory,
       designGroup: designGroup,
       taxiwayDesignGroup: taxiwayDesignGroup,
+      wakeTurbulence: wakeTurbulence,
       MTOWLb: get(columns.MTOW).flatMap(ParsingHelpers.parseDouble),
       mainGearWidthFt: get(columns.mainGearWidth).flatMap(ParsingHelpers.parseDouble),
       cockpitToMainGearFt: get(columns.cockpitToMainGear).flatMap(ParsingHelpers.parseDouble),
@@ -95,6 +101,23 @@ struct ACDParser {
       tailHeightFt: get(columns.tailHeight).flatMap(ParsingHelpers.parseDouble),
       approachSpeedKt: get(columns.approachSpeed).flatMap(ParsingHelpers.parseDouble)
     )
+  }
+
+  // A slashed value (`"Light/Medium"`) is a type that straddles the 7,000 kg
+  // boundary depending on its configuration; no single category describes it,
+  // so the field is left empty rather than rounded to one side.
+  private static func parseWakeTurbulence(
+    _ raw: String?,
+    rowNumber: Int
+  ) throws -> WakeTurbulenceCategory? {
+    guard let raw, !raw.contains("/") else { return nil }
+    guard let category = WakeTurbulenceCategory(ACDValue: raw) else {
+      throw SwiftACDError.unknownWakeTurbulenceCategory(
+        rawValue: raw,
+        context: .ACDRow(rowNumber)
+      )
+    }
+    return category
   }
 
   func parse(errorCallback: (any Error) -> Void) throws -> [ACDRow] {
@@ -170,5 +193,19 @@ extension Cell {
       return inlineString.text
     }
     return value
+  }
+}
+
+extension WakeTurbulenceCategory {
+  // The FAA writes the category out ("Heavy") where EUROCONTROL publishes the
+  // ICAO letter this enum is keyed by.
+  fileprivate init?(ACDValue: String) {
+    switch ACDValue.lowercased() {
+      case "light": self = .light
+      case "medium": self = .medium
+      case "heavy": self = .heavy
+      case "super": self = .super
+      default: return nil
+    }
   }
 }

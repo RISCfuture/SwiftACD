@@ -8,6 +8,7 @@ struct ACDRow: Sendable, Hashable {
   let approachCategory: AircraftApproachCategory?
   let designGroup: AirplaneDesignGroup?
   let taxiwayDesignGroup: TaxiwayDesignGroup?
+  let wakeTurbulence: WakeTurbulenceCategory?
 
   let MTOWLb: Double?
   let mainGearWidthFt: Double?

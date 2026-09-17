@@ -48,7 +48,11 @@ struct Builder: Sendable {
       approach: primary?.approachCategory ?? APD?.categories.approachCategory,
       designGroup: primary?.designGroup,
       taxiwayDesignGroup: primary?.taxiwayDesignGroup,
-      wakeTurbulence: APD?.categories.wakeTurbulence,
+      // WTC is the one overlapping field where EUROCONTROL wins: it publishes
+      // the ICAO letter, while the FAA writes a coarser spelling that leaves
+      // boundary-straddling types uncategorized. The FAA value fills in for the
+      // types EUROCONTROL does not cover at all.
+      wakeTurbulence: APD?.categories.wakeTurbulence ?? primary?.wakeTurbulence,
       RECAT_EU: APD?.categories.RECAT_EU
     )
 
@@ -95,7 +99,7 @@ struct Builder: Sendable {
       approach: row.approachCategory,
       designGroup: row.designGroup,
       taxiwayDesignGroup: row.taxiwayDesignGroup,
-      wakeTurbulence: nil,
+      wakeTurbulence: row.wakeTurbulence,
       RECAT_EU: nil
     )
     return Variant(

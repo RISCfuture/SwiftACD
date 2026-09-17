@@ -14,6 +14,7 @@ struct `Builder tests` {
     ICAO: String = "A320",
     model: String = "A320",
     MTOW: Double? = 169_755,
+    wakeTurbulence: WakeTurbulenceCategory? = .medium,
     wingspan: Double? = 111.8,
     wingspanWithWinglets: Double? = 117.5,
     length: Double? = 123.3,
@@ -29,6 +30,7 @@ struct `Builder tests` {
       approachCategory: .c,
       designGroup: .III,
       taxiwayDesignGroup: .group3,
+      wakeTurbulence: wakeTurbulence,
       MTOWLb: MTOW,
       mainGearWidthFt: mainGearWidth,
       cockpitToMainGearFt: cockpitToMainGear,
@@ -52,6 +54,7 @@ struct `Builder tests` {
       approachCategory: .c,
       designGroup: .III,
       taxiwayDesignGroup: .group3,
+      wakeTurbulence: .medium,
       MTOWLb: MTOW,
       mainGearWidthFt: 18.9,
       cockpitToMainGearFt: 53.0,
@@ -214,7 +217,9 @@ struct `Builder tests` {
     #expect(profile.categories.approach == .c)
     #expect(profile.categories.designGroup == .III)
     #expect(profile.categories.taxiwayDesignGroup == .group3)
-    #expect(profile.categories.wakeTurbulence == nil)
+    // The FAA publishes a wake category of its own, so an ACD-only profile is
+    // not left without one.
+    #expect(profile.categories.wakeTurbulence == .medium)
     #expect(profile.categories.RECAT_EU == nil)
 
     #expect(profile.recognition == nil)
@@ -289,6 +294,20 @@ struct `Builder tests` {
     #expect(profile.recognition != nil)
     #expect(profile.performance != nil)
     #expect(profile.sources == [.ACD, .APD])
+  }
+
+  @Test
+  func `takes the wake category from EUROCONTROL when both sources publish one`() throws {
+    let ACD = Self.a320ACDRow(wakeTurbulence: .light)
+    let APD = Self.a320APDRecord()
+    let result = Builder.build(ACDRows: [ACD], APDRecords: ["A320": APD])
+
+    let profile = try #require(result["A320"])
+    // EUROCONTROL publishes the ICAO letter; the FAA's spelled-out column is
+    // coarser, so it only fills gaps.
+    #expect(profile.categories.wakeTurbulence == .medium)
+    // The variant still reports what its own FAA row said.
+    #expect(profile.variants.first?.categories.wakeTurbulence == .light)
   }
 
   @Test

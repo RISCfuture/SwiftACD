@@ -17,7 +17,10 @@ public struct Categories: Sendable, Codable, Hashable {
   /// FAA Taxiway Design Group (TDG), 1A–7.
   public let taxiwayDesignGroup: TaxiwayDesignGroup?
 
-  /// ICAO Wake Turbulence Category (WTC) as published by EUROCONTROL.
+  /// ICAO Wake Turbulence Category (WTC). EUROCONTROL is preferred, since it
+  /// publishes the ICAO letter directly; the FAA's spelled-out column fills in
+  /// for types EUROCONTROL does not cover. `nil` for a type the FAA records as
+  /// straddling two categories and EUROCONTROL does not list.
   public let wakeTurbulence: WakeTurbulenceCategory?
 
   /// EUROCONTROL RECAT-EU classification.

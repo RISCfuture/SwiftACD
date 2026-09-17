@@ -76,7 +76,7 @@ specific configuration should iterate ``AircraftProfile/variants`` directly.
 | ``Categories/approach`` | FAA → APD | FAA AAC; falls back to APD APC. |
 | ``Categories/designGroup`` | FAA only | Airplane Design Group (I–VI). |
 | ``Categories/taxiwayDesignGroup`` | FAA only | Taxiway Design Group (1A–7). |
-| ``Categories/wakeTurbulence`` | APD only | ICAO WTC: L/M/H/J. |
+| ``Categories/wakeTurbulence`` | APD, then ACD | ICAO WTC: L/M/H/J. EUROCONTROL wins; the FAA's spelled-out column fills gaps. |
 | ``Categories/RECAT_EU`` | APD only | RECAT-EU: CAT-A through CAT-F, or `special` for types separated case by case. |
 
 ### Dimensions (all stored in feet)
