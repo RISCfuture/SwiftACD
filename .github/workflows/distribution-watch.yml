@@ -1,0 +1,448 @@
+name: Distribution Watch
+
+# Neither source publishes on a calendar. The FAA replaces one workbook whenever it revises the
+# data, and EUROCONTROL edits its pages continuously, so this watches the workbook — whose URL
+# answers with a stable Last-Modified and size — and parses when that changes. A monthly floor
+# covers the EUROCONTROL side, which cannot be probed without fetching all 400 detail pages.
+#
+# A parse that drops a field reports no error at all, so the check is a coverage report compared
+# against the previous run's: the report artifact, named for the distribution it describes, is
+# both the record of what has been checked and the next run's baseline.
+
+on:
+  schedule:
+    - cron: "0 15 * * *"
+  workflow_dispatch:
+    inputs:
+      force:
+        description: "Parse even if this distribution has already been checked."
+        required: false
+        default: false
+        type: boolean
+
+permissions: {}
+
+concurrency:
+  group: ${{ github.workflow }}
+  cancel-in-progress: false
+
+env:
+  LANDING_PAGE: https://www.faa.gov/airports/engineering/aircraft_char_database
+
+jobs:
+  probe:
+    name: Look for a new distribution
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      actions: read
+      issues: write
+    outputs:
+      fingerprint: ${{ steps.workbook.outputs.fingerprint }}
+      edition: ${{ steps.workbook.outputs.edition }}
+      published-at: ${{ steps.workbook.outputs.published-at }}
+      parse: ${{ steps.decide.outputs.parse }}
+      reason: ${{ steps.decide.outputs.reason }}
+    steps:
+      - name: Identify the published workbook
+        id: workbook
+        run: |
+          set -euo pipefail
+
+          # The FAA does not link the workbook by extension — the href is extensionless and the
+          # edition lives in the anchor text ("Aircraft Characteristics (October 2024)"), which is
+          # also the only human-readable version the page carries.
+          curl --fail --silent --show-error --location \
+               --retry 3 --retry-delay 10 --retry-all-errors \
+               --output page.html "$LANDING_PAGE"
+
+          anchor=$(grep -oE '<a [^>]*href="[^"]*"[^>]*>[^<]*Aircraft Characteristics \([^<]*\)[^<]*</a>' \
+                   page.html | head -n 1 || true)
+
+          if [ -z "$anchor" ]; then
+            echo "found=false" >> "$GITHUB_OUTPUT"
+            echo "::error::No workbook link on $LANDING_PAGE; the page layout has changed."
+            exit 0
+          fi
+
+          href=$(printf '%s' "$anchor" | sed -E 's/.*href="([^"]*)".*/\1/')
+          case "$href" in
+            http*) url=$href ;;
+            /*)    url=https://www.faa.gov$href ;;
+            *)     url=$LANDING_PAGE/$href ;;
+          esac
+
+          # Anything read off the page is FAA-controlled text: flattened to one short printable
+          # line before it goes anywhere near an output file or an issue body.
+          edition=$(printf '%s' "$anchor" | sed -E 's/.*>([^<]*)<\/a>/\1/' \
+                    | tr -d '\r\n' | tr -cd '[:print:]' | cut -c1-80)
+
+          curl --fail --silent --show-error --location --head \
+               --retry 3 --retry-delay 10 --retry-all-errors \
+               --output headers.txt "$url"
+
+          published=$(grep -i '^last-modified:' headers.txt | tail -n 1 | cut -d' ' -f2- | tr -d '\r')
+          bytes=$(grep -i '^content-length:' headers.txt | tail -n 1 | tr -cd '0-9')
+
+          # The fingerprint names the artifact, so it has to stay filename-safe. Last-Modified and
+          # size together move whenever the FAA reposts the workbook, even to the same URL.
+          # `date -d` parses the RFC 1123 header on the GNU userland this runs on; the checksum
+          # keeps the fingerprint sensitive to Last-Modified anywhere it does not.
+          stamp=$(date -u -d "$published" +%Y%m%dT%H%M%SZ 2>/dev/null \
+                  || printf '%s' "$published" | cksum | cut -d' ' -f1)
+          fingerprint="$stamp-${bytes:-0}"
+
+          echo "Workbook $url -> $published ($bytes bytes), edition $edition"
+          {
+            echo "found=true"
+            echo "url=$url"
+            echo "edition=$edition"
+            echo "published-at=$published"
+            echo "fingerprint=$fingerprint"
+          } >> "$GITHUB_OUTPUT"
+
+      - name: Report a workbook the FAA no longer links
+        if: steps.workbook.outputs.found != 'true'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+          RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+        run: |
+          set -euo pipefail
+
+          {
+            echo "The workbook link could not be found on <$LANDING_PAGE>."
+            echo
+            echo "\`ACDDownloader\` locates the workbook the same way this probe does — an anchor"
+            echo "whose text reads \"Aircraft Characteristics (<edition>)\" — so downloads are"
+            echo "almost certainly failing too."
+            echo
+            echo "[View the run]($RUN_URL)"
+          } > issue-body.md
+
+          title="FAA workbook link not found on the ACD page"
+          number=$(TITLE="$title" gh issue list --state open --search "workbook link in:title" \
+            --json number,title --jq 'map(select(.title == env.TITLE)) | .[0].number // empty')
+
+          if [ -n "$number" ]; then
+            gh issue comment "$number" --body-file issue-body.md
+          else
+            gh issue create --title "$title" --body-file issue-body.md
+          fi
+
+      - name: Decide whether to parse
+        id: decide
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+          FOUND: ${{ steps.workbook.outputs.found }}
+          FINGERPRINT: ${{ steps.workbook.outputs.fingerprint }}
+          EDITION: ${{ steps.workbook.outputs.edition }}
+          FORCED: ${{ inputs.force }}
+        run: |
+          set -euo pipefail
+
+          note() { echo "$1"; echo "$1" >> "$GITHUB_STEP_SUMMARY"; }
+          decide() {
+            echo "parse=$1" >> "$GITHUB_OUTPUT"
+            echo "reason=$2" >> "$GITHUB_OUTPUT"
+          }
+
+          if [ "$FOUND" != "true" ]; then
+            note "The workbook could not be located, so there is nothing to parse."
+            decide false "the workbook could not be located"
+            exit 0
+          fi
+
+          if [ "$FORCED" = "true" ]; then
+            note "Re-checking \`$EDITION\` on request."
+            decide true "a manual re-check was requested"
+            exit 0
+          fi
+
+          # An existing report artifact is the record that this distribution was checked. Its age
+          # doubles as the EUROCONTROL floor: a month without a run earns one regardless.
+          artifact="acd-report-$FINGERPRINT"
+          created=$(ARTIFACT="$artifact" gh api \
+            "repos/$GH_REPO/actions/artifacts?name=$artifact&per_page=100" \
+            --jq '[.artifacts[] | select(.name == env.ARTIFACT and .expired == false)]
+                  | max_by(.created_at) | .created_at // empty')
+
+          if [ -z "$created" ]; then
+            note "Workbook \`$EDITION\` is new to this repository."
+            decide true "the FAA published a workbook this repository has not parsed"
+            exit 0
+          fi
+
+          age=$(( ( $(date -u +%s) - $(date -u -d "$created" +%s) ) / 86400 ))
+          if [ "$age" -ge 30 ]; then
+            note "Workbook \`$EDITION\` is unchanged, but it was last checked $age day(s) ago."
+            decide true "EUROCONTROL data may have moved since the last check $age day(s) ago"
+          else
+            note "Workbook \`$EDITION\` was checked $age day(s) ago; nothing to do."
+            decide false "already checked"
+          fi
+
+  parse:
+    name: Parse the distribution
+    needs: probe
+    if: needs.probe.outputs.parse == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    permissions:
+      contents: read
+      actions: read
+      issues: write
+    env:
+      EDITION: ${{ needs.probe.outputs.edition }}
+      FINGERPRINT: ${{ needs.probe.outputs.fingerprint }}
+      PUBLISHED: ${{ needs.probe.outputs.published-at }}
+      REASON: ${{ needs.probe.outputs.reason }}
+    steps:
+      - uses: actions/checkout@v6
+
+      - name: Name the report and the log
+        run: |
+          set -euo pipefail
+          {
+            echo "REPORT=$RUNNER_TEMP/report.json"
+            echo "PARSE_LOG=$RUNNER_TEMP/parse.log"
+            echo "DISTRIBUTION=$RUNNER_TEMP/distribution"
+          } >> "$GITHUB_ENV"
+
+      - uses: SwiftyLab/setup-swift@latest
+        with:
+          swift-version: "6.4"
+
+      - name: Cache SwiftPM build products
+        # Usually a miss: runs are weeks apart, well past the seven-day idle eviction. It earns its
+        # place when a distribution is re-checked by hand after a parser fix.
+        uses: actions/cache@v6
+        with:
+          path: |
+            .build
+            ~/.cache/org.swift.swiftpm
+          key: swiftpm-watch-ubuntu-latest-swift6.4-${{ hashFiles('Package.resolved') }}
+
+      - name: Build
+        run: swift build -c release --product SwiftACD_E2E
+
+      - name: Fetch the previous report
+        id: baseline
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+        run: |
+          set -euo pipefail
+
+          # download-artifact cannot reach another run's artifact without that run's id, which is
+          # itself state to keep somewhere. Any report is a usable baseline, so the newest wins.
+          id=$(gh api "repos/$GH_REPO/actions/artifacts?per_page=100" \
+            --jq '[.artifacts[] | select((.name | startswith("acd-report-")) and .expired == false)]
+                  | max_by(.created_at) | .id // empty')
+
+          if [ -z "$id" ]; then
+            echo "No earlier report; this run becomes the baseline for the next one."
+            echo "found=false" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+
+          gh api "repos/$GH_REPO/actions/artifacts/$id/zip" > previous.zip
+          unzip -o -q previous.zip -d previous
+
+          # A run that died before writing its report still uploaded its log, so an artifact is not
+          # a promise that there is anything to compare against.
+          if [ -f previous/report.json ]; then
+            echo "found=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "The previous artifact holds no report; the comparison is skipped."
+            echo "found=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Download and parse the distribution
+        id: parse
+        env:
+          BASELINE_FOUND: ${{ steps.baseline.outputs.found }}
+        run: |
+          set -euo pipefail
+
+          args=("$DISTRIBUTION" --report "$REPORT")
+          if [ "$BASELINE_FOUND" = "true" ]; then
+            args+=(--baseline previous/report.json)
+          fi
+
+          # The exit code is captured, not propagated: the report still has to be uploaded — it is
+          # the next run's baseline — then summarized and turned into an issue.
+          status=0
+          {
+            .build/release/SwiftACD_E2E download --output "$DISTRIBUTION" \
+              && .build/release/SwiftACD_E2E parse "${args[@]}" > /dev/null
+          } 2>&1 | tee "$PARSE_LOG" || status=$?
+          echo "status=$status" >> "$GITHUB_OUTPUT"
+
+      - name: Upload the report
+        # Uploaded on failure too: this artifact is also the record that the distribution was
+        # checked, so a broken one is reported once rather than every day.
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: acd-report-${{ needs.probe.outputs.fingerprint }}
+          path: |
+            ${{ runner.temp }}/report.json
+            ${{ runner.temp }}/parse.log
+          retention-days: 90
+          overwrite: true
+          if-no-files-found: warn
+
+      - name: Read the verdict out of the report
+        id: verdict
+        if: always()
+        run: |
+          set -euo pipefail
+
+          drift=0
+          if [ -f "$REPORT" ]; then
+            drift=$(jq '.drift | length' "$REPORT")
+          fi
+          echo "drift=$drift" >> "$GITHUB_OUTPUT"
+
+      - name: Write the job summary
+        if: always()
+        run: |
+          set -euo pipefail
+
+          if [ ! -f "$REPORT" ]; then
+            {
+              echo "## $EDITION"
+              echo
+              echo "The run produced no report; see the log in the artifact."
+            } >> "$GITHUB_STEP_SUMMARY"
+            exit 0
+          fi
+
+          {
+            echo "## $EDITION"
+            echo
+            echo "- Parsed because: $REASON"
+            echo "- Workbook published: \`$PUBLISHED\`"
+            echo "- Outcome: $(jq -r 'if .failed then "**failed**" else "clean" end' "$REPORT")"
+            jq -r '.failureReasons[]? | "  - \(.)"' "$REPORT"
+            echo
+            jq -r '"- Profiles: \(.profileCount) " +
+                   "(FAA only \(.sources.ACD), EUROCONTROL only \(.sources.APD), both \(.sources.both))"' "$REPORT"
+            jq -r '"- Per-record errors: \(.errorCount)"' "$REPORT"
+            jq -r '"- Fields tracked: \(.coverage | length)"' "$REPORT"
+            echo
+
+            if [ "$(jq '.drift | length' "$REPORT")" -gt 0 ]; then
+              echo "### Drift against the previous check"
+              echo
+              echo "| Field | Was | Now | Reason |"
+              echo "|---|---:|---:|---|"
+              jq -r '.drift[] | "| `\(.field)` | \(.was) | \(.now) | \(.reason) |"' "$REPORT"
+              echo
+            fi
+
+            if [ "$(jq '.errorSamples | length' "$REPORT")" -gt 0 ]; then
+              echo "### Error samples"
+              echo
+              echo '```'
+              jq -r '.errorSamples[]' "$REPORT"
+              echo '```'
+            fi
+          } >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Open or update the distribution's issue
+        # Drift files an issue as readily as a failure: a field that quietly empties produces no
+        # error at all, so the coverage diff is the only thing that would ever mention it.
+        if: >-
+          always() && steps.parse.outcome != 'skipped'
+          && (steps.parse.outputs.status != '0' || steps.verdict.outputs.drift != '0')
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+          STATUS: ${{ steps.parse.outputs.status }}
+          RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+        run: |
+          set -euo pipefail
+
+          # Everything the sources publish reaches the body through a file, so nothing they ship is
+          # ever read as shell.
+          {
+            echo "The end-to-end check of **$EDITION** (workbook published \`$PUBLISHED\`) found"
+            echo "problems."
+            echo
+            echo "[View the run]($RUN_URL) — the \`acd-report-$FINGERPRINT\` artifact holds the"
+            echo "full report and the tool's log."
+            echo
+
+            if [ -f "$REPORT" ]; then
+              if [ "$(jq '.failureReasons | length' "$REPORT")" -gt 0 ]; then
+                echo "### Failures"
+                echo
+                jq -r '.failureReasons[] | "- \(.)"' "$REPORT"
+                echo
+              fi
+
+              if [ "$(jq '.drift | length' "$REPORT")" -gt 0 ]; then
+                echo "### Coverage drift against the previous check"
+                echo
+                echo "| Field | Was | Now | Reason |"
+                echo "|---|---:|---:|---|"
+                jq -r '.drift[] | "| `\(.field)` | \(.was) | \(.now) | \(.reason) |"' "$REPORT"
+                echo
+                echo "A field that empties is a parser regression; the sources thinning their own"
+                echo "data shows up as a drop, not a wipe."
+                echo
+              fi
+
+              echo "### Counts"
+              echo
+              jq -r '"- Profiles: \(.profileCount)", "- Per-record errors: \(.errorCount)"' "$REPORT"
+              echo
+
+              if [ "$(jq '.errorSamples | length' "$REPORT")" -gt 0 ]; then
+                echo "### Error samples"
+                echo
+                echo '```'
+                jq -r '.errorSamples[]' "$REPORT"
+                echo '```'
+              fi
+            else
+              echo "The run produced no report. The tail of its log:"
+              echo
+              echo '```'
+              tail -c 8000 "$PARSE_LOG" 2>/dev/null || echo "No log was produced either."
+              echo '```'
+            fi
+          } > issue-body.md
+
+          # The title is a function of the distribution alone, which is what keeps a re-check
+          # idempotent. The search drops the punctuation so GitHub cannot read it as a qualifier.
+          title="Distribution $FINGERPRINT failed its parse check"
+          number=$(TITLE="$title" gh issue list --state all --search "$FINGERPRINT in:title" \
+            --json number,title --jq 'map(select(.title == env.TITLE)) | .[0].number // empty')
+
+          if [ -n "$number" ]; then
+            gh issue reopen "$number" >/dev/null 2>&1 || true
+            gh issue comment "$number" --body-file issue-body.md
+          else
+            gh issue create --title "$title" --body-file issue-body.md
+          fi
+
+      - name: Annotate the outcome
+        if: always() && steps.parse.outcome != 'skipped'
+        env:
+          STATUS: ${{ steps.parse.outputs.status }}
+          DRIFT: ${{ steps.verdict.outputs.drift }}
+        run: |
+          set -euo pipefail
+
+          if [ "${STATUS:-1}" != "0" ]; then
+            echo "::error::$EDITION failed its parse check; an issue has been filed."
+            exit 1
+          elif [ "${DRIFT:-0}" != "0" ]; then
+            echo "::warning::$EDITION parsed cleanly but ${DRIFT} field(s) drifted."
+          else
+            echo "$EDITION parsed cleanly with no coverage drift."
+          fi

@@ -21,6 +21,11 @@ All notable changes to SwiftACD will be documented in this file. The format is b
 
 ### Added
 
+- A `Distribution Watch` workflow that probes the FAA workbook daily and parses
+  the full distribution whenever it changes — or monthly regardless, since the
+  EUROCONTROL side cannot be probed cheaply. Coverage is compared against the
+  previous check, so a field that quietly stops being parsed is reported even
+  though it raises no error.
 - `SwiftACD_E2E parse --report <path>` writes a JSON report of profile counts,
   per-record errors, and how many profiles carry each field; `--baseline <path>`
   compares that against an earlier report and exits non-zero when a field loses
