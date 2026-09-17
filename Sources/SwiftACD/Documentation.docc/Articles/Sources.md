@@ -120,8 +120,10 @@ envelope.
 | Cruise | `Performance.Cruise.mach` | dimensionless `Double` |
 | Cruise | `Performance.Cruise.ceiling` | `ceilingFt` |
 | Cruise | `Performance.Cruise.range` | `rangeNmi` |
-| Descent (initial / descent) | `Performance.DescentBand.IAS` | `IASKt` |
-| Descent (initial / descent) | `Performance.DescentBand.rateOfDescent` | `rateOfDescentFPM` |
+| Descent (initial) | `Performance.MachDescentBand.mach` | dimensionless `Double` |
+| Descent (initial) | `Performance.MachDescentBand.rateOfDescent` | `rateOfDescentFPM` |
+| Descent | `Performance.DescentBand.IAS` | `IASKt` |
+| Descent | `Performance.DescentBand.rateOfDescent` | `rateOfDescentFPM` |
 | Approach | `Performance.Approach.minimumCleanSpeed` | `minimumCleanSpeedKt` |
 | Approach | `Performance.Approach.rateOfDescent` | `rateOfDescentFPM` |
 | Landing | `Performance.Landing.vat` | `vatKt` |

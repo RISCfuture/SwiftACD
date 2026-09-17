@@ -159,13 +159,14 @@ extension Performance {
   /// Descent performance.
   public struct Descent: Sendable, Codable, Hashable {
     /// Initial descent band (high-altitude / Mach descent prior to crossing
-    /// FL240).
-    public let initialDescent: DescentBand?
+    /// FL240). EUROCONTROL publishes this band as a Mach number rather than an
+    /// IAS.
+    public let initialDescent: MachDescentBand?
     /// Standard descent band (post FL240, IAS-driven).
     public let descent: DescentBand?
 
     /// Memberwise initializer. Both fields default to `nil`.
-    public init(initialDescent: DescentBand? = nil, descent: DescentBand? = nil) {
+    public init(initialDescent: MachDescentBand? = nil, descent: DescentBand? = nil) {
       self.initialDescent = initialDescent
       self.descent = descent
     }
@@ -188,6 +189,27 @@ extension Performance {
     /// Memberwise initializer.
     public init(IASKt: Double, rateOfDescentFPM: Double) {
       self.IASKt = IASKt
+      self.rateOfDescentFPM = rateOfDescentFPM
+    }
+  }
+
+  /// Mach + ROD pair recorded for the initial descent band, which
+  /// EUROCONTROL flies at a Mach number rather than at an indicated airspeed.
+  public struct MachDescentBand: Sendable, Codable, Hashable {
+    /// Mach flown during the band, when EUROCONTROL publishes one.
+    /// Dimensionless.
+    public let mach: Double?
+    /// Rate of descent, in feet per minute.
+    public let rateOfDescentFPM: Double
+
+    /// Rate of descent expressed via `UnitSpeed.feetPerMinute`.
+    public var rateOfDescent: Measurement<UnitSpeed> {
+      .init(value: rateOfDescentFPM, unit: .feetPerMinute)
+    }
+
+    /// Memberwise initializer.
+    public init(mach: Double? = nil, rateOfDescentFPM: Double) {
+      self.mach = mach
       self.rateOfDescentFPM = rateOfDescentFPM
     }
   }

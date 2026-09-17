@@ -96,8 +96,9 @@ struct `APD parser` {
       Self.approxEqual(r.performance.landing.distanceFt, Self.metersToFeet(1_440), tolerance: 1.0)
     )
 
-    // initialDescentMACH on the A320 is "0.78" with no kt unit → not stored as IAS.
-    #expect(r.performance.descent.initialIASKt == nil)
+    // EUROCONTROL flies the initial descent at a Mach number, not an IAS.
+    #expect(r.performance.descent.initialMach == 0.78)
+    #expect(r.performance.descent.initialRateOfDescentFPM == 1_000)
 
     #expect(r.identity.alternativeNames.contains(where: { $0.contains("A-320") }))
   }

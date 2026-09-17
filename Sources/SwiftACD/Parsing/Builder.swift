@@ -239,10 +239,20 @@ struct Builder: Sendable {
   }
 
   private static func descent(from d: APDRecord.Performance.Descent) -> Performance.Descent? {
-    let initial = descentBand(IAS: d.initialIASKt, rateOfDescent: d.initialRateOfDescentFPM)
+    let initial = machDescentBand(mach: d.initialMach, rateOfDescent: d.initialRateOfDescentFPM)
     let normal = descentBand(IAS: d.descentIASKt, rateOfDescent: d.descentRateOfDescentFPM)
     if initial == nil && normal == nil { return nil }
     return Performance.Descent(initialDescent: initial, descent: normal)
+  }
+
+  // The rate is what makes a band; EUROCONTROL omits the Mach for types slow
+  // enough that it would be meaningless.
+  private static func machDescentBand(
+    mach: Double?,
+    rateOfDescent: Double?
+  ) -> Performance.MachDescentBand? {
+    guard let rateOfDescent else { return nil }
+    return Performance.MachDescentBand(mach: mach, rateOfDescentFPM: rateOfDescent)
   }
 
   private static func descentBand(IAS: Double?, rateOfDescent: Double?) -> Performance.DescentBand?

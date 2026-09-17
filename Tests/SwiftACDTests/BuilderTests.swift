@@ -118,7 +118,7 @@ struct `Builder tests` {
           rangeNmi: 3_300
         ),
         descent: APDRecord.Performance.Descent(
-          initialIASKt: 290,
+          initialMach: 0.78,
           initialRateOfDescentFPM: 3_500,
           descentIASKt: 290,
           descentRateOfDescentFPM: 2_000
@@ -178,7 +178,7 @@ struct `Builder tests` {
           rangeNmi: nil
         ),
         descent: APDRecord.Performance.Descent(
-          initialIASKt: nil,
+          initialMach: nil,
           initialRateOfDescentFPM: nil,
           descentIASKt: nil,
           descentRateOfDescentFPM: nil
@@ -251,6 +251,8 @@ struct `Builder tests` {
     #expect(performance.takeoff?.v2Kt == 145)
     #expect(performance.cruise?.TASKt == 447)
     #expect(performance.landing?.vatKt == 138)
+    #expect(performance.descent?.initialDescent?.mach == 0.78)
+    #expect(performance.descent?.initialDescent?.rateOfDescentFPM == 3_500)
 
     #expect(profile.variants.isEmpty)
     #expect(profile.sources == .APD)

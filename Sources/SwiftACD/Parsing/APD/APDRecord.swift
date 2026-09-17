@@ -77,7 +77,7 @@ extension APDRecord {
     }
 
     struct Descent: Sendable, Hashable {
-      let initialIASKt: Double?
+      let initialMach: Double?
       let initialRateOfDescentFPM: Double?
       let descentIASKt: Double?
       let descentRateOfDescentFPM: Double?

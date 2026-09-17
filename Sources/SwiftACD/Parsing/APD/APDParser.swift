@@ -158,10 +158,9 @@ struct APDParser {
           rangeNmi: APDExtractors.perfDouble(document, datagraph: "cruiseRange")
         ),
         descent: APDRecord.Performance.Descent(
-          // The `initialDescentMACH` datagraph is always a Mach number
-          // (label `MACH`, value ≤ 1.00 across every observed APD page);
-          // it is never IAS, so this slot stays empty.
-          initialIASKt: nil,
+          // EUROCONTROL flies the initial descent at a Mach number rather than
+          // an IAS, and labels the cell `MACH` accordingly.
+          initialMach: APDExtractors.perfDouble(document, datagraph: "initialDescentMACH"),
           initialRateOfDescentFPM: APDExtractors.perfDouble(
             document,
             datagraph: "initialDescentROD"
