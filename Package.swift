@@ -44,7 +44,7 @@ let package = Package(
     ),
     .testTarget(
       name: "SwiftACDTests",
-      dependencies: ["SwiftACD"],
+      dependencies: ["SwiftACD", "SwiftACD_E2E"],
       resources: [
         .copy("TestResources")
       ],

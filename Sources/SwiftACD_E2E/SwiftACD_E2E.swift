@@ -61,6 +61,12 @@ extension SwiftACD_E2E {
     @Option(help: "If set, print the full profile for this ICAO designator and exit.")
     var ICAO: String?
 
+    @Option(help: "Write a JSON coverage report for this parse to this path.")
+    var report: String?
+
+    @Option(help: "Compare against an earlier --report file; fail on lost fields.")
+    var baseline: String?
+
     func run() async throws {
       let dir = URL(fileURLWithPath: directory)
       let parser = Parser(directory: dir)
@@ -79,19 +85,27 @@ extension SwiftACD_E2E {
         }
       }
 
-      let errorCount = ErrorCounter()
+      let errorCounter = ErrorCounter()
       let profiles = try await parser.parse(
         progress: progress,
         errorCallback: { error in
-          Task { await errorCount.add(error) }
+          Task { await errorCounter.add(error) }
         }
       )
       monitor.cancel()
       print("")
-      let totalErrors = await errorCount.total
+      let totalErrors = await errorCounter.total
       FileHandle.standardError.write(
         Data("Parsed \(profiles.count) profile(s), \(totalErrors) per-record error(s).\n".utf8)
       )
+
+      if let report {
+        try await writeReport(
+          to: report,
+          profiles: profiles,
+          errorCounter: errorCounter
+        )
+      }
 
       if let ICAO {
         guard let profile = profiles[ICAO] else {
@@ -120,6 +134,41 @@ extension SwiftACD_E2E {
       }
     }
 
+    // Written before the profile listing so a report still lands when the
+    // listing is what fails, and it is the last thing to raise `ExitCode`:
+    // a drifting run has to leave its report behind to be the next baseline.
+    private func writeReport(
+      to path: String,
+      profiles: [String: AircraftProfile],
+      errorCounter: ErrorCounter
+    ) async throws {
+      var distributionReport = try DistributionReport(
+        profiles: profiles,
+        errorCount: await errorCounter.total,
+        errorSamples: await errorCounter.samples
+      )
+      if let baseline {
+        let data = try Data(contentsOf: URL(fileURLWithPath: baseline))
+        distributionReport.compare(
+          against: try JSONDecoder().decode(DistributionReport.self, from: data)
+        )
+      }
+
+      let encoder = JSONEncoder()
+      encoder.outputFormatting = [.prettyPrinted, .sortedKeys]
+      try encoder.encode(distributionReport).write(to: URL(fileURLWithPath: path))
+
+      for reason in distributionReport.failureReasons {
+        FileHandle.standardError.write(Data("error: \(reason)\n".utf8))
+      }
+      for entry in distributionReport.drift {
+        FileHandle.standardError.write(
+          Data("drift: \(entry.field) \(entry.was) → \(entry.now) (\(entry.reason))\n".utf8)
+        )
+      }
+      if distributionReport.failed { throw ExitCode.failure }
+    }
+
     private func emitJSON<T: Encodable>(_ value: T) throws {
       let encoder = JSONEncoder()
       encoder.outputFormatting = [.prettyPrinted, .sortedKeys]
@@ -139,8 +188,11 @@ extension SwiftACD_E2E {
 
 // MARK: - helpers
 
-private actor ErrorCounter {
+actor ErrorCounter {
+  private static let maximumSamples = 50
+
   private(set) var total: Int = 0
+  private(set) var samples: [String] = []
 
   func add(_ error: any Error) {
     total += 1
@@ -148,6 +200,7 @@ private actor ErrorCounter {
       (error as? (any LocalizedError))?.failureReason
       ?? (error as NSError).localizedFailureReason
       ?? error.localizedDescription
+    if samples.count < Self.maximumSamples { samples.append(detail) }
     FileHandle.standardError.write(Data("warning: \(detail)\n".utf8))
   }
 }

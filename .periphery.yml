@@ -1,1 +1,5 @@
 retain_public: true
+
+# `DistributionReport` is written as JSON for the next run and for the Distribution Watch workflow
+# to read with `jq`, so its properties are used by code Periphery cannot see.
+retain_codable_properties: true

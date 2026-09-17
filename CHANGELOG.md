@@ -21,6 +21,10 @@ All notable changes to SwiftACD will be documented in this file. The format is b
 
 ### Added
 
+- `SwiftACD_E2E parse --report <path>` writes a JSON report of profile counts,
+  per-record errors, and how many profiles carry each field; `--baseline <path>`
+  compares that against an earlier report and exits non-zero when a field loses
+  all of its values.
 - `RECATEU.special`, the `"Special"` category EUROCONTROL publishes for types
   it separates case by case (`A225`, `B2`, `B52`), which previously decoded to
   `nil` alongside genuinely uncategorized types.
