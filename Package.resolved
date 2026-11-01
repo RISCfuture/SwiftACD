@@ -1,5 +1,5 @@
 {
-  "originHash" : "79deaec690580884b59c294e87f63aef0b7dbbe3d4652157e7adb48bf7495831",
+  "originHash" : "020cf9e3cd0588ee1ffa2045e0f0b528d70906af2d65a3831a3a7bd6d35eb501",
   "pins" : [
     {
       "identity" : "corexlsx",
@@ -42,8 +42,8 @@
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/scinfu/SwiftSoup",
       "state" : {
-        "revision" : "8d6ad267714cac3ae747cefdd21f7a6665006e1f",
-        "version" : "2.13.7"
+        "revision" : "e7f85f4d3dd91ca9a1e94d3328aa1ed5120a8c0f",
+        "version" : "2.14.3"
       }
     },
     {
