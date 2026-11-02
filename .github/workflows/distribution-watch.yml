@@ -11,7 +11,9 @@ name: Distribution Watch
 
 on:
   schedule:
-    - cron: "0 15 * * *"
+    # Mondays. The workbook has no fixed schedule, so a weekly poll bounds how stale a revision gets;
+    # the monthly EUROCONTROL floor is reached by the first poll after it falls due.
+    - cron: "0 15 * * 1"
   workflow_dispatch:
     inputs:
       force:
